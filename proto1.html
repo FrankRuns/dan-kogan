@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exercise 01 — Where Should You Put the Warehouse?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e0e;
+    --bg2: #161616;
+    --bg3: #1e1e1e;
+    --border: rgba(255,255,255,0.08);
+    --text: #e8e4dc;
+    --muted: #8a8480;
+    --accent: #c9a96e;
+    --accent2: #7ec8a4;
+    --danger: #d45f3c;
+    --blue: #5a9fd4;
+    --serif: 'DM Serif Display', Georgia, serif;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Lato', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 17px; line-height: 1.75; }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(14,14,14,0.92); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2rem; height: 52px;
+  }
+  .nav-brand { font-family: var(--mono); font-size: 13px; color: var(--accent); letter-spacing: 0.04em; }
+  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links a { color: var(--muted); font-size: 13px; text-decoration: none; letter-spacing: 0.03em; transition: color 0.2s; font-family: var(--mono); }
+  .nav-links a:hover { color: var(--text); }
+  .nav-links a.active { color: var(--accent); }
+
+  /* SECTIONS */
+  section { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 6rem 0 4rem; position: relative; overflow: hidden; }
+  .section-inner { max-width: 860px; margin: 0 auto; padding: 0 2rem; width: 100%; }
+
+  /* SECTION LABELS */
+  .section-num { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 0.75rem; }
+  .section-title { font-family: var(--serif); font-size: clamp(2rem, 4.5vw, 3.2rem); line-height: 1.15; margin-bottom: 1.5rem; }
+  .section-title em { font-style: italic; color: var(--accent); }
+  .section-divider { width: 40px; height: 1px; background: var(--accent); margin-bottom: 2rem; opacity: 0.6; }
+  p { color: var(--muted); font-weight: 300; margin-bottom: 1.2rem; }
+  p strong { color: var(--text); font-weight: 700; }
+
+  /* EXERCISES */
+  .exercise-section { background: var(--bg2); }
+  .exercise-header { background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; padding: 1.5rem; margin-bottom: 2rem; display: grid; grid-template-columns: auto 1fr; gap: 1.5rem; align-items: center; }
+  .ex-num-big { font-family: var(--serif); font-size: 3.5rem; color: var(--accent); line-height: 1; opacity: 0.4; }
+  .ex-question { font-family: var(--serif); font-size: 1.4rem; color: var(--text); margin-bottom: 0.4rem; }
+  .ex-goal { font-family: var(--mono); font-size: 12px; color: var(--muted); letter-spacing: 0.04em; }
+  .widget-frame { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 1.5rem; margin-bottom: 1.5rem; }
+  .takeaway { background: var(--bg3); border-left: 2px solid var(--accent2); padding: 1rem 1.25rem; border-radius: 0 4px 4px 0; margin-top: 1.5rem; font-size: 14px; color: var(--muted); line-height: 1.65; font-weight: 300; }
+  .takeaway strong { color: var(--accent2); }
+
+  /* CANVAS / WIDGET SHARED STYLES */
+  canvas { display: block; }
+  .widget-hint { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-bottom: 1rem; letter-spacing: 0.03em; }
+  .widget-metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
+  .wm { background: var(--bg2); border: 1px solid var(--border); border-radius: 3px; padding: 10px 12px; }
+  .wm-label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.06em; margin-bottom: 4px; text-transform: uppercase; }
+  .wm-value { font-size: 18px; font-weight: 700; color: var(--text); font-family: var(--mono); }
+  .widget-legend { display: flex; gap: 1.25rem; flex-wrap: wrap; margin-top: 0.75rem; }
+  .wl-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); font-family: var(--mono); }
+  .wl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .wl-sq { width: 8px; height: 8px; flex-shrink: 0; }
+  .widget-btn { font-family: var(--mono); font-size: 12px; background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 6px 14px; border-radius: 3px; cursor: pointer; margin-top: 12px; transition: all 0.2s; letter-spacing: 0.04em; }
+  .widget-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .widget-reveal { font-size: 13px; color: var(--muted); background: rgba(126,200,164,0.08); border-left: 2px solid var(--accent2); padding: 10px 14px; margin-top: 12px; line-height: 1.65; display: none; border-radius: 0 3px 3px 0; font-weight: 300; }
+
+  /* NEXT PAGE NAV */
+  .page-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); }
+  .page-nav a { font-family: var(--mono); font-size: 13px; color: var(--accent); text-decoration: none; letter-spacing: 0.04em; transition: color 0.2s; }
+  .page-nav a:hover { color: var(--text); }
+
+  @media (max-width: 700px) {
+    .widget-metrics { grid-template-columns: 1fr 1fr; }
+    nav .nav-links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">frank@lyric // exercise_01</div>
+  <ul class="nav-links">
+    <li><a href="index.html">← back</a></li>
+    <li><a href="proto1.html" class="active">exercise_01</a></li>
+    <li><a href="proto2.html">exercise_02 →</a></li>
+  </ul>
+</nav>
+
+<section id="ex1" class="exercise-section">
+  <div class="section-inner">
+    <div class="section-num">03 — Exercise 01</div>
+    <div class="exercise-header">
+      <div class="ex-num-big">01</div>
+      <div>
+        <div class="ex-question">Where should you put the warehouse?</div>
+        <div class="ex-goal">// drag the warehouse around the map — discover where cost is minimized</div>
+      </div>
+    </div>
+
+    <div class="widget-frame">
+      <div class="widget-hint">// drag the warehouse (▲) anywhere on the map</div>
+      <div class="widget-metrics">
+        <div class="wm"><div class="wm-label">Total transport cost</div><div class="wm-value" id="tc1">—</div></div>
+        <div class="wm"><div class="wm-label">Avg distance</div><div class="wm-value" id="ad1">—</div></div>
+        <div class="wm"><div class="wm-label">Worst-served</div><div class="wm-value" id="wd1">—</div></div>
+      </div>
+      <canvas id="map1" style="width:100%; border:1px solid var(--border); border-radius:3px; cursor:crosshair; background:var(--bg2);" height="380"></canvas>
+      <div class="widget-legend">
+        <div class="wl-item"><div class="wl-dot" style="background:#5a9fd4;"></div>customer (size = demand)</div>
+        <div class="wl-item"><div class="wl-sq" style="background:none; border:1.5px solid #c9a96e; width:10px; height:10px;"></div>warehouse (drag me)</div>
+        <div class="wl-item"><div class="wl-dot" style="background:#7ec8a4;"></div>demand-weighted center</div>
+      </div>
+      <div>
+        <button class="widget-btn" id="btn-opt1">show optimal location</button>
+        <button class="widget-btn" id="btn-rst1" style="margin-left:8px;">reset</button>
+      </div>
+      <div class="widget-reveal" id="rev1">The green dot is the <strong>demand-weighted centroid</strong> — the point that minimizes total cost when cost scales with distance × demand. It pulls toward NYC and LA because they're your heaviest customers. The geographic center is not the cost-optimal center. This is the gravity model intuition: optimal placement follows demand, not geography.</div>
+    </div>
+
+    <div class="takeaway"><strong>Takeaway →</strong> Before you run a network optimization, you need to know your demand distribution. The data requirement follows from understanding the model. Prototyping teaches you what data actually matters.</div>
+
+    <div class="page-nav">
+      <a href="index.html">← back to intro</a>
+      <a href="proto2.html">exercise_02 →</a>
+    </div>
+  </div>
+</section>
+
+<script>
+(function() {
+  const canvas = document.getElementById('map1');
+  const ctx = canvas.getContext('2d');
+  const customers = [
+    { x:0.12, y:0.30, demand:400, label:'Portland' },
+    { x:0.22, y:0.55, demand:250, label:'Sacramento' },
+    { x:0.18, y:0.72, demand:600, label:'LA' },
+    { x:0.30, y:0.78, demand:180, label:'Phoenix' },
+    { x:0.55, y:0.65, demand:350, label:'Dallas' },
+    { x:0.62, y:0.30, demand:150, label:'Minneapolis' },
+    { x:0.72, y:0.50, demand:220, label:'Chicago' },
+    { x:0.80, y:0.68, demand:500, label:'Atlanta' },
+    { x:0.88, y:0.40, demand:700, label:'NYC' },
+    { x:0.90, y:0.60, demand:280, label:'Charlotte' },
+  ];
+  const td = customers.reduce((s,c)=>s+c.demand,0);
+  const optX = customers.reduce((s,c)=>s+c.x*c.demand,0)/td;
+  const optY = customers.reduce((s,c)=>s+c.y*c.demand,0)/td;
+  let wh={x:0.50,y:0.18}, drag=false, showOpt=false;
+
+  function W(){return canvas.clientWidth;}
+  function H(){return canvas.clientHeight;}
+  function miles(a,b){const dx=(a.x-b.x)*2500,dy=(a.y-b.y)*1500;return Math.sqrt(dx*dx+dy*dy);}
+
+  function metrics(){
+    const costs=customers.map(c=>miles(wh,c)*c.demand*0.10);
+    const total=costs.reduce((s,v)=>s+v,0);
+    const avg=customers.reduce((s,c)=>s+miles(wh,c),0)/customers.length;
+    const worst=Math.max(...customers.map(c=>miles(wh,c)));
+    document.getElementById('tc1').textContent='$'+Math.round(total/1000)+'K';
+    document.getElementById('ad1').textContent=Math.round(avg)+' mi';
+    document.getElementById('wd1').textContent=Math.round(worst)+' mi';
+  }
+
+  function draw(){
+    const w=canvas.clientWidth, h=canvas.clientHeight;
+    canvas.width=w; canvas.height=h;
+    ctx.clearRect(0,0,w,h);
+    customers.forEach(c=>{
+      ctx.beginPath(); ctx.moveTo(wh.x*w,wh.y*h); ctx.lineTo(c.x*w,c.y*h);
+      ctx.strokeStyle='rgba(90,159,212,0.15)'; ctx.lineWidth=1; ctx.stroke();
+    });
+    customers.forEach(c=>{
+      const r=5+(c.demand/700)*13;
+      ctx.beginPath(); ctx.arc(c.x*w,c.y*h,r,0,Math.PI*2);
+      ctx.fillStyle='rgba(90,159,212,0.7)'; ctx.fill();
+      ctx.font='11px DM Mono,monospace'; ctx.fillStyle='rgba(138,132,128,0.9)';
+      ctx.textAlign='center'; ctx.fillText(c.label,c.x*w,c.y*h-r-3);
+    });
+    if(showOpt){
+      ctx.beginPath(); ctx.arc(optX*w,optY*h,9,0,Math.PI*2);
+      ctx.fillStyle='rgba(126,200,164,0.25)'; ctx.fill();
+      ctx.strokeStyle='#7ec8a4'; ctx.lineWidth=1.5; ctx.stroke();
+      ctx.font='11px DM Mono,monospace'; ctx.fillStyle='#7ec8a4';
+      ctx.textAlign='left'; ctx.fillText('weighted center',optX*w+13,optY*h+4);
+    }
+    const wx=wh.x*w, wy=wh.y*h, s=13;
+    ctx.beginPath(); ctx.moveTo(wx,wy-s); ctx.lineTo(wx+s,wy+s); ctx.lineTo(wx-s,wy+s); ctx.closePath();
+    ctx.fillStyle=drag?'#a07840':'#c9a96e'; ctx.fill();
+    ctx.font='500 11px DM Mono,monospace'; ctx.fillStyle='#c9a96e';
+    ctx.textAlign='center'; ctx.fillText('warehouse',wx,wy-s-4);
+    metrics();
+  }
+
+  function frac(e){
+    const r=canvas.getBoundingClientRect();
+    const cx=e.touches?e.touches[0].clientX:e.clientX;
+    const cy=e.touches?e.touches[0].clientY:e.clientY;
+    return{x:Math.max(0.02,Math.min(0.98,(cx-r.left)/r.width)),y:Math.max(0.02,Math.min(0.98,(cy-r.top)/r.height))};
+  }
+  function near(e){const f=frac(e),dx=(f.x-wh.x)*W(),dy=(f.y-wh.y)*H();return Math.sqrt(dx*dx+dy*dy)<22;}
+  canvas.addEventListener('mousedown',e=>{if(near(e))drag=true;});
+  canvas.addEventListener('mousemove',e=>{canvas.style.cursor=near(e)?'grab':'crosshair';if(!drag)return;wh=frac(e);draw();});
+  canvas.addEventListener('mouseup',()=>{drag=false;draw();});
+  canvas.addEventListener('touchstart',e=>{e.preventDefault();if(near(e))drag=true;},{passive:false});
+  canvas.addEventListener('touchmove',e=>{e.preventDefault();if(!drag)return;wh=frac(e);draw();},{passive:false});
+  canvas.addEventListener('touchend',()=>{drag=false;draw();});
+
+  document.getElementById('btn-opt1').addEventListener('click',()=>{
+    showOpt=!showOpt;
+    document.getElementById('btn-opt1').textContent=showOpt?'hide optimal location':'show optimal location';
+    document.getElementById('rev1').style.display=showOpt?'block':'none';
+    draw();
+  });
+  document.getElementById('btn-rst1').addEventListener('click',()=>{wh={x:0.50,y:0.18};draw();});
+  draw();
+  window.addEventListener('resize',draw);
+})();
+</script>
+</body>
+</html>
