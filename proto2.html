@@ -168,10 +168,16 @@ canvas#map2{
 
     <div class="legend">
       <div class="wl-item"><div class="wl-dot" style="background:#5a9fd4;"></div>customer</div>
-      <div class="wl-item"><div class="wl-sq" style="background:#c9a96e;"></div>active warehouse</div>
-      <div class="wl-item"><div class="wl-sq" style="background:#2a2a2a;border:1px solid #333;"></div>inactive</div>
-      <div class="wl-item"><div class="wl-dot" style="background:#7ec8a4;border-radius:50%;"></div>optimal (chart)</div>
-      <div class="wl-item"><div class="wl-dot" style="background:#e8e4dc;border-radius:50%;"></div>your selection</div>
+      <div class="wl-item"><div class="wl-sq" style="background:#c9a96e;border-radius:2px;"></div>active WH</div>
+      <div class="wl-item"><div class="wl-sq" style="background:#2a2a2a;border:1px solid #444;border-radius:2px;"></div>inactive</div>
+      <div class="wl-item" style="margin-left:0.5rem;border-left:1px solid rgba(255,255,255,0.08);padding-left:0.75rem;">
+        <svg width="18" height="8" style="flex-shrink:0"><line x1="0" y1="4" x2="18" y2="4" stroke="rgba(201,169,110,0.5)" stroke-width="1.5" stroke-dasharray="3,3"/></svg>fixed</div>
+      <div class="wl-item">
+        <svg width="18" height="8" style="flex-shrink:0"><line x1="0" y1="4" x2="18" y2="4" stroke="rgba(90,159,212,0.5)" stroke-width="1.5" stroke-dasharray="3,3"/></svg>transport</div>
+      <div class="wl-item">
+        <svg width="18" height="8" style="flex-shrink:0"><line x1="0" y1="4" x2="18" y2="4" stroke="rgba(232,228,220,0.35)" stroke-width="2"/></svg>total</div>
+      <div class="wl-item"><div class="wl-dot" style="background:#7ec8a4;"></div>sweet spot</div>
+      <div class="wl-item"><div class="wl-dot" style="background:#e8e4dc;"></div>your total</div>
     </div>
 
     <button class="widget-btn" id="btn-sweet">find the sweet spot</button>
@@ -358,90 +364,100 @@ canvas#map2{
     const n   = activeSet.size;
     const cur = calcCosts(candidates.filter((_, i) => activeSet.has(i)));
 
-    const labels = refCurve.map((_, i) => String(i+1));
+    const labels   = refCurve.map((_, i) => String(i+1));
+    const refFixed = refCurve.map(c => Math.round(c.fixed    / 1000));
+    const refVar   = refCurve.map(c => Math.round(c.variable / 1000));
+    const refTot   = refCurve.map(c => Math.round(c.total    / 1000));
 
-    // Bars: use ACTUAL selection costs for the active column, reference for all others
-    const fixedData = refCurve.map((c, i) =>
-      Math.round(((i+1) === n ? cur.fixed    : c.fixed)    / 1000));
-    const varData   = refCurve.map((c, i) =>
-      Math.round(((i+1) === n ? cur.variable : c.variable) / 1000));
-
-    // Reference total line stays on the sequential reference curve throughout
-    const totData = refCurve.map(c => Math.round(c.total / 1000));
-
-    // Highlight the column matching current count
-    const fixedBg = refCurve.map((_, i) =>
-      (i+1) === n ? 'rgba(201,169,110,0.72)' : 'rgba(201,169,110,0.18)'
-    );
-    const varBg = refCurve.map((_, i) =>
-      (i+1) === n ? 'rgba(90,159,212,0.60)' : 'rgba(90,159,212,0.14)'
-    );
-
-    // "You are here" point — null everywhere except current N
-    const yourDot = n > 0
-      ? refCurve.map((_, i) => (i+1) === n ? Math.round(cur.total / 1000) : null)
-      : refCurve.map(() => null);
+    // Dots for user's actual costs — only appear at current N
+    const dot = (val) => refCurve.map((_, i) => (n > 0 && (i+1) === n) ? val : null);
+    const dotR = (i) => (n > 0 && (i+1) === n) ? 7 : 0;
 
     if (chartInst) chartInst.destroy();
 
     chartInst = new Chart(document.getElementById('costChart'), {
-      type: 'bar',
+      type: 'line',
       data: {
         labels,
         datasets: [
+          // ── Reference curves (thin, muted) ──
           {
-            label: 'Fixed ($K)',
-            data: fixedData,
-            backgroundColor: fixedBg,
-            stack: 's'
-          },
-          {
-            label: 'Transport ($K)',
-            data: varData,
-            backgroundColor: varBg,
-            stack: 's'
-          },
-          {
-            // reference total line
-            label: 'Total (ref)',
-            data: totData,
-            type: 'line',
-            borderColor: 'rgba(232,228,220,0.2)',
+            label: 'Fixed cost',
+            data: refFixed,
+            borderColor: 'rgba(201,169,110,0.45)',
+            borderWidth: 1.5,
+            pointRadius: 0,
+            tension: 0,
             backgroundColor: 'transparent',
-            borderWidth: 1.2,
-            pointRadius: totData.map((_, i) => (i+1) === optN ? 5 : 2),
-            pointBackgroundColor: totData.map((_, i) =>
-              (i+1) === optN ? '#7ec8a4' : 'rgba(232,228,220,0.3)'
-            ),
-            tension: 0.3,
-            stack: undefined
+            borderDash: [3, 3],
           },
           {
-            // "Your selection" — live dot
-            label: 'Your selection',
-            data: yourDot,
-            type: 'line',
+            label: 'Transport cost',
+            data: refVar,
+            borderColor: 'rgba(90,159,212,0.45)',
+            borderWidth: 1.5,
+            pointRadius: 0,
+            tension: 0.35,
+            backgroundColor: 'transparent',
+            borderDash: [3, 3],
+          },
+          {
+            label: 'Total cost',
+            data: refTot,
+            borderColor: 'rgba(232,228,220,0.35)',
+            borderWidth: 2,
+            pointRadius: refTot.map((_, i) => (i+1) === optN ? 6 : 0),
+            pointBackgroundColor: '#7ec8a4',
+            tension: 0.3,
+            backgroundColor: 'transparent',
+          },
+          // ── Your selection dots (solid, full-size) ──
+          {
+            label: 'Your fixed',
+            data: dot(n > 0 ? Math.round(cur.fixed    / 1000) : null),
             showLine: false,
-            pointRadius: yourDot.map(v => v !== null ? 7 : 0),
-            pointBackgroundColor: '#e8e4dc',
+            pointRadius: refCurve.map((_, i) => dotR(i)),
+            pointBackgroundColor: '#c9a96e',
             pointBorderColor: '#0e0e0e',
             pointBorderWidth: 1.5,
-            stack: undefined
-          }
+            borderColor: 'transparent',
+            backgroundColor: 'transparent',
+          },
+          {
+            label: 'Your transport',
+            data: dot(n > 0 ? Math.round(cur.variable / 1000) : null),
+            showLine: false,
+            pointRadius: refCurve.map((_, i) => dotR(i)),
+            pointBackgroundColor: '#5a9fd4',
+            pointBorderColor: '#0e0e0e',
+            pointBorderWidth: 1.5,
+            borderColor: 'transparent',
+            backgroundColor: 'transparent',
+          },
+          {
+            label: 'Your total',
+            data: dot(n > 0 ? Math.round(cur.total    / 1000) : null),
+            showLine: false,
+            pointRadius: refCurve.map((_, i) => (n > 0 && (i+1) === n) ? 9 : 0),
+            pointBackgroundColor: '#e8e4dc',
+            pointBorderColor: '#0e0e0e',
+            pointBorderWidth: 2,
+            borderColor: 'transparent',
+            backgroundColor: 'transparent',
+          },
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: { duration: 220 },
+        animation: { duration: 200 },
         plugins: {
           legend: { display: false },
           tooltip: {
+            filter: item => item.parsed.y !== null,
             callbacks: {
               label: c => {
-                if (c.dataset.label === 'Your selection' && c.parsed.y !== null) {
-                  return 'Your selection: $' + c.parsed.y + 'K';
-                }
+                if (c.parsed.y === null) return null;
                 return c.dataset.label + ': $' + c.parsed.y + 'K';
               }
             }
@@ -449,18 +465,17 @@ canvas#map2{
         },
         scales: {
           x: {
-            stacked: true,
             ticks: { color: '#8a8480', font: { size: 10, family: 'DM Mono' } },
             grid: { color: 'rgba(255,255,255,0.04)' },
             title: {
-              display: true, text: 'warehouses',
+              display: true, text: 'warehouses active',
               color: '#8a8480', font: { size: 9, family: 'DM Mono' }
             }
           },
           y: {
-            stacked: false,
             ticks: { callback: v => '$' + v + 'K', color: '#8a8480', font: { size: 10, family: 'DM Mono' } },
-            grid: { color: 'rgba(255,255,255,0.05)' }
+            grid: { color: 'rgba(255,255,255,0.05)' },
+            beginAtZero: true,
           }
         }
       }
