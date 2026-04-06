@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exercise 03 — Who Should You Source From?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e0e0e;--bg2:#161616;--bg3:#1e1e1e;
+  --border:rgba(255,255,255,0.08);
+  --text:#e8e4dc;--muted:#8a8480;
+  --accent:#c9a96e;--accent2:#7ec8a4;
+  --mono:'DM Mono',monospace;
+  --nav-h:48px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--mono);}
+
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  background:rgba(14,14,14,0.95);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 1.5rem;height:var(--nav-h);
+}
+.nav-brand{font-size:12px;color:var(--accent);letter-spacing:0.04em;}
+.nav-links{display:flex;gap:1.5rem;list-style:none;}
+.nav-links a{color:var(--muted);font-size:11px;text-decoration:none;letter-spacing:0.03em;transition:color 0.2s;}
+.nav-links a:hover{color:var(--text);}
+.nav-links a.active{color:var(--accent);}
+
+.main{
+  position:fixed;
+  top:var(--nav-h);left:0;right:0;bottom:0;
+  display:grid;
+  grid-template-columns:56% 44%;
+}
+
+/* LEFT */
+.col-left{
+  display:flex;flex-direction:column;
+  padding:1rem 1rem 1rem 1.25rem;
+  border-right:1px solid var(--border);
+  overflow:hidden;
+}
+.ex-header{display:flex;align-items:center;gap:1rem;margin-bottom:0.5rem;flex-shrink:0;}
+.ex-num{font-family:'DM Serif Display',Georgia,serif;font-size:2.2rem;color:var(--accent);opacity:0.35;line-height:1;}
+.ex-question{font-family:'DM Serif Display',Georgia,serif;font-size:1.1rem;color:var(--text);line-height:1.2;}
+.ex-goal{font-size:11px;color:var(--muted);letter-spacing:0.03em;margin-bottom:0.6rem;flex-shrink:0;}
+.active-count{
+  display:flex;align-items:center;gap:0.5rem;
+  font-size:11px;color:var(--muted);letter-spacing:0.03em;
+  margin-bottom:0.5rem;flex-shrink:0;
+}
+.active-count em{color:var(--accent);font-style:normal;font-size:13px;}
+
+canvas#scatter{
+  flex:1;min-height:0;
+  display:block;width:100%;
+  border:1px solid var(--border);border-radius:3px;
+  background:var(--bg);
+}
+
+/* RIGHT */
+.col-right{
+  display:flex;flex-direction:column;
+  padding:1rem 1.25rem 1rem 1rem;
+  background:var(--bg2);
+  overflow:hidden;
+}
+.metrics-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:6px;
+  margin-bottom:0.65rem;flex-shrink:0;
+}
+.wm{background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:7px 10px;transition:border-color 0.2s;}
+.wm.warn{border-color:#d47a5a;}
+.wm-label{font-size:9px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:3px;}
+.wm-value{font-size:16px;font-weight:500;color:var(--text);}
+
+.chart-wrap{
+  flex:1;min-height:0;
+  position:relative;
+  border:1px solid var(--border);border-radius:3px;
+  background:var(--bg);
+  margin-bottom:0.65rem;
+}
+.chart-wrap canvas{position:absolute;inset:0;}
+
+.legend{display:flex;flex-wrap:wrap;gap:0.5rem 1rem;margin-bottom:0.65rem;flex-shrink:0;}
+.wl-item{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);}
+.wl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+.widget-btn{
+  font-family:var(--mono);font-size:11px;
+  background:transparent;border:1px solid var(--border);
+  color:var(--muted);padding:7px 12px;border-radius:3px;
+  cursor:pointer;transition:all 0.2s;letter-spacing:0.04em;
+  flex-shrink:0;margin-bottom:0.65rem;
+}
+.widget-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+.reveal{
+  font-size:11.5px;color:var(--muted);
+  background:rgba(126,200,164,0.06);border-left:2px solid var(--accent2);
+  padding:0.7rem 0.9rem;line-height:1.65;
+  display:none;border-radius:0 3px 3px 0;
+  flex-shrink:0;overflow-y:auto;max-height:90px;
+}
+.takeaway{
+  margin-top:auto;
+  font-size:11px;color:var(--muted);line-height:1.6;
+  border-left:2px solid var(--accent2);padding:0.65rem 0.9rem;
+  background:rgba(126,200,164,0.05);border-radius:0 3px 3px 0;
+  flex-shrink:0;
+}
+.takeaway strong{color:var(--accent2);}
+.page-nav{
+  margin-top:0.65rem;padding-top:0.65rem;
+  border-top:1px solid var(--border);
+  display:flex;justify-content:space-between;flex-shrink:0;
+}
+.page-nav a{font-size:11px;color:var(--accent);text-decoration:none;letter-spacing:0.03em;transition:color 0.2s;}
+.page-nav a:hover{color:var(--text);}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">frank@lyric.tech // exercise_03</div>
+  <ul class="nav-links">
+    <li><a href="index.html">← back</a></li>
+    <li><a href="proto1.html">exercise_01</a></li>
+    <li><a href="proto2.html">exercise_02</a></li>
+    <li><a href="proto3.html" class="active">exercise_03</a></li>
+  </ul>
+</nav>
+
+<div class="main">
+
+  <!-- LEFT: scatter plot canvas -->
+  <div class="col-left">
+    <div class="ex-header">
+      <div class="ex-num">03</div>
+      <div class="ex-question">Who should you source from?</div>
+    </div>
+    <div class="ex-goal">// click a supplier (●) to add or remove them from your mix — circle size = capacity</div>
+    <div class="active-count">// selected: <em id="sel-count">0</em> supplier<span id="sel-plural"></span></div>
+    <canvas id="scatter"></canvas>
+  </div>
+
+  <!-- RIGHT: metrics + allocation chart -->
+  <div class="col-right">
+    <div class="metrics-grid">
+      <div class="wm"><div class="wm-label">Blended unit cost</div><div class="wm-value" id="m-cost">—</div></div>
+      <div class="wm"><div class="wm-label">Annual spend</div><div class="wm-value" id="m-spend">—</div></div>
+      <div class="wm" id="m-rel-box"><div class="wm-label">Portfolio reliability</div><div class="wm-value" id="m-rel">—</div></div>
+      <div class="wm" id="m-cov-box"><div class="wm-label">Demand coverage</div><div class="wm-value" id="m-cov">—</div></div>
+    </div>
+
+    <div class="chart-wrap">
+      <canvas id="allocChart"></canvas>
+    </div>
+
+    <div class="legend">
+      <div class="wl-item"><div class="wl-dot" style="background:#7ec8a4;"></div>reliability ≥ 90%</div>
+      <div class="wl-item"><div class="wl-dot" style="background:#c9a96e;"></div>80 – 90%</div>
+      <div class="wl-item"><div class="wl-dot" style="background:#d47a5a;"></div>&lt; 80%</div>
+      <div class="wl-item" style="margin-left:0.5rem;border-left:1px solid rgba(255,255,255,0.08);padding-left:0.75rem;">
+        <span style="display:inline-block;width:9px;height:9px;background:#e8e4dc;transform:rotate(45deg);"></span>
+        &nbsp;portfolio mix
+      </div>
+    </div>
+
+    <button class="widget-btn" id="btn-opt">find the optimal mix</button>
+    <div class="reveal" id="rev3">
+      The optimal mix balances cost and reliability across the full demand volume.
+      A single cheap supplier looks efficient — until they miss a shipment.
+      Spreading volume across 2–3 reliable suppliers costs a bit more but dramatically
+      reduces stockout risk. Most sourcing teams cap at 3–4 suppliers per category
+      to keep relationships manageable.
+    </div>
+
+    <div class="takeaway"><strong>Takeaway →</strong> Sourcing isn't just about the cheapest price — it's portfolio construction. Cost, reliability, capacity, and lead time all interact. The right mix depends on your risk tolerance and what a stockout actually costs the business.</div>
+
+    <div class="page-nav">
+      <a href="proto2.html">← exercise_02</a>
+      <a href="index.html">back to intro →</a>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+(function(){
+  // ── DATA ──
+  const DEMAND = 10000; // annual units to source
+
+  const suppliers = [
+    { name:'Apex Global',  cost:8.50,  rel:0.95,  lt:8,  cap:5000  },
+    { name:'CheapSource',  cost:6.80,  rel:0.74,  lt:14, cap:9000  },
+    { name:'PrimeTech',    cost:10.20, rel:0.99,  lt:4,  cap:3000  },
+    { name:'MidValue Co',  cost:8.00,  rel:0.87,  lt:10, cap:6000  },
+    { name:'EconoSupply',  cost:6.20,  rel:0.69,  lt:16, cap:11000 },
+    { name:'SwiftSource',  cost:9.10,  rel:0.93,  lt:5,  cap:4000  },
+    { name:'LocalFirst',   cost:11.50, rel:0.995, lt:3,  cap:2500  },
+  ];
+
+  const MAX_CAP   = Math.max(...suppliers.map(s => s.cap));
+  const COST_MIN  = 5.6,  COST_MAX = 12.4;
+  const REL_MIN   = 0.62, REL_MAX  = 1.02;
+
+  // ── STATE ──
+  let activeSet  = new Set();
+  let hoveredIdx = -1;
+  let chartInst  = null;
+
+  // ── CANVAS ──
+  const sc  = document.getElementById('scatter');
+  const ctx = sc.getContext('2d');
+  const PAD = { top:22, right:24, bottom:46, left:56 };
+
+  function cssSize() {
+    const r = sc.getBoundingClientRect();
+    return { W: r.width, H: r.height };
+  }
+
+  function resizeCanvas() {
+    const { W, H } = cssSize();
+    sc.width  = Math.round(W * devicePixelRatio);
+    sc.height = Math.round(H * devicePixelRatio);
+    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    drawScatter();
+  }
+
+  function toPixel(cost, rel) {
+    const { W, H } = cssSize();
+    const x = PAD.left + (cost - COST_MIN) / (COST_MAX - COST_MIN) * (W - PAD.left - PAD.right);
+    const y = H - PAD.bottom - (rel - REL_MIN) / (REL_MAX - REL_MIN) * (H - PAD.top - PAD.bottom);
+    return { x, y };
+  }
+
+  function suppR(cap) {
+    return 9 + 13 * Math.sqrt(cap / MAX_CAP);  // 9..22 px
+  }
+
+  function relColor(rel, a) {
+    a = a ?? 1;
+    if (rel >= 0.90) return `rgba(126,200,164,${a})`;
+    if (rel >= 0.80) return `rgba(201,169,110,${a})`;
+    return `rgba(212,122,90,${a})`;
+  }
+
+  // ── DRAW ──
+  function drawScatter() {
+    const { W, H } = cssSize();
+    ctx.clearRect(0, 0, W, H);
+
+    const plotW = W - PAD.left - PAD.right;
+    const plotH = H - PAD.top  - PAD.bottom;
+
+    // "Ideal zone" faint highlight (low cost, high reliability)
+    const idealX1 = PAD.left;
+    const idealX2 = toPixel(8.5, 0.9).x;
+    const idealY1 = PAD.top;
+    const idealY2 = toPixel(8.5, 0.90).y;
+    const g = ctx.createLinearGradient(idealX1, idealY1, idealX2, idealY2);
+    g.addColorStop(0, 'rgba(126,200,164,0.07)');
+    g.addColorStop(1, 'rgba(126,200,164,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(idealX1, idealY1, idealX2 - idealX1, idealY2 - idealY1);
+
+    // Grid lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    for (let c = 6; c <= 12; c++) {
+      const { x } = toPixel(c, 0.8);
+      ctx.beginPath(); ctx.moveTo(x, PAD.top); ctx.lineTo(x, H - PAD.bottom); ctx.stroke();
+    }
+    [0.70, 0.80, 0.90, 1.00].forEach(r => {
+      const { y } = toPixel(8, r);
+      ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(W - PAD.right, y); ctx.stroke();
+    });
+
+    // Axes
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(PAD.left, PAD.top);
+    ctx.lineTo(PAD.left, H - PAD.bottom);
+    ctx.lineTo(W - PAD.right, H - PAD.bottom);
+    ctx.stroke();
+
+    // Axis tick labels
+    ctx.fillStyle = '#6a6460';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.font = '9.5px DM Mono,monospace';
+    for (let c = 6; c <= 12; c += 2) {
+      const { x } = toPixel(c, 0.8);
+      ctx.fillText('$' + c, x, H - PAD.bottom + 7);
+    }
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    [0.70, 0.80, 0.90, 1.00].forEach(r => {
+      const { y } = toPixel(8, r);
+      ctx.fillText((r * 100).toFixed(0) + '%', PAD.left - 7, y);
+    });
+
+    // Axis titles
+    ctx.fillStyle = '#5a5650';
+    ctx.font = '9px DM Mono,monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('unit cost  →', W / 2, H - 4);
+    ctx.save();
+    ctx.translate(11, H / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textBaseline = 'top';
+    ctx.fillText('↑  reliability', 0, 0);
+    ctx.restore();
+
+    // Quadrant labels
+    ctx.font = '8.5px DM Mono,monospace';
+    ctx.fillStyle = 'rgba(126,200,164,0.18)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('ideal zone', PAD.left + 5, PAD.top + 5);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.07)';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('risky + cheap', W - PAD.right - 4, H - PAD.bottom - 5);
+
+    // Supplier circles
+    suppliers.forEach((s, i) => {
+      const { x, y } = toPixel(s.cost, s.rel);
+      const r = suppR(s.cap);
+      const sel = activeSet.has(i);
+      const hov = i === hoveredIdx;
+
+      // Glow for selected
+      if (sel) {
+        ctx.beginPath();
+        ctx.arc(x, y, r + 5, 0, Math.PI * 2);
+        ctx.fillStyle = relColor(s.rel, 0.12);
+        ctx.fill();
+      }
+
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      if (sel) {
+        ctx.fillStyle   = relColor(s.rel, 0.72);
+        ctx.strokeStyle = relColor(s.rel, 1);
+        ctx.lineWidth   = 2;
+      } else {
+        ctx.fillStyle   = hov ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.03)';
+        ctx.strokeStyle = hov ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.11)';
+        ctx.lineWidth   = 1.5;
+      }
+      ctx.fill();
+      ctx.stroke();
+
+      // Supplier name above circle
+      ctx.font        = `${sel ? '500' : '400'} 10px DM Mono,monospace`;
+      ctx.fillStyle   = sel ? '#e8e4dc' : (hov ? '#7a7470' : '#4a4440');
+      ctx.textAlign   = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(s.name, x, y - r - 3);
+
+      // Cost label inside circle (selected only)
+      if (sel) {
+        ctx.font        = '9px DM Mono,monospace';
+        ctx.fillStyle   = 'rgba(14,14,14,0.85)';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('$' + s.cost.toFixed(2), x, y);
+      }
+    });
+
+    // Portfolio centroid diamond
+    if (activeSet.size > 0) {
+      const m = calcMetrics();
+      if (m) {
+        const { x, y } = toPixel(m.blendedCost, m.blendedRel);
+        const ds = 10;
+
+        // Connector lines from centroid to each selected supplier (faint)
+        ctx.setLineDash([3, 5]);
+        ctx.strokeStyle = 'rgba(232,228,220,0.12)';
+        ctx.lineWidth = 1;
+        activeSet.forEach(i => {
+          const p = toPixel(suppliers[i].cost, suppliers[i].rel);
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(p.x, p.y);
+          ctx.stroke();
+        });
+        ctx.setLineDash([]);
+
+        // Diamond
+        ctx.beginPath();
+        ctx.moveTo(x,      y - ds);
+        ctx.lineTo(x + ds, y);
+        ctx.lineTo(x,      y + ds);
+        ctx.lineTo(x - ds, y);
+        ctx.closePath();
+        ctx.fillStyle   = 'rgba(232,228,220,0.92)';
+        ctx.strokeStyle = '#e8e4dc';
+        ctx.lineWidth   = 1.5;
+        ctx.fill();
+        ctx.stroke();
+
+        // Label (left or right depending on position)
+        const labelRight = x < W * 0.7;
+        ctx.font        = '10px DM Mono,monospace';
+        ctx.fillStyle   = '#e8e4dc';
+        ctx.textAlign   = labelRight ? 'left' : 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('your mix', labelRight ? x + ds + 5 : x - ds - 5, y);
+      }
+    }
+
+    // Empty state hint
+    if (activeSet.size === 0) {
+      ctx.font        = '11px DM Mono,monospace';
+      ctx.fillStyle   = 'rgba(255,255,255,0.15)';
+      ctx.textAlign   = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('click a supplier to start building your mix', W / 2, H / 2);
+    }
+  }
+
+  // ── HIT TEST ──
+  function hitTest(px, py) {
+    // iterate reverse so top-drawn circle wins
+    for (let i = suppliers.length - 1; i >= 0; i--) {
+      const { x, y } = toPixel(suppliers[i].cost, suppliers[i].rel);
+      if (Math.hypot(px - x, py - y) <= suppR(suppliers[i].cap) + 5) return i;
+    }
+    return -1;
+  }
+
+  sc.addEventListener('mousemove', function(e) {
+    const r   = sc.getBoundingClientRect();
+    const idx = hitTest(e.clientX - r.left, e.clientY - r.top);
+    if (idx !== hoveredIdx) {
+      hoveredIdx = idx;
+      sc.style.cursor = idx >= 0 ? 'pointer' : 'default';
+      drawScatter();
+    }
+  });
+  sc.addEventListener('mouseleave', function() {
+    hoveredIdx = -1;
+    sc.style.cursor = 'default';
+    drawScatter();
+  });
+  sc.addEventListener('click', function(e) {
+    const r   = sc.getBoundingClientRect();
+    const idx = hitTest(e.clientX - r.left, e.clientY - r.top);
+    if (idx < 0) return;
+    activeSet.has(idx) ? activeSet.delete(idx) : activeSet.add(idx);
+    update();
+  });
+
+  new ResizeObserver(resizeCanvas).observe(sc);
+
+  // ── METRICS ──
+  function calcMetrics() {
+    if (!activeSet.size) return null;
+    const idxs = [...activeSet];
+    const totalCap   = idxs.reduce((s, i) => s + suppliers[i].cap, 0);
+    const coverage   = Math.min(totalCap, DEMAND) / DEMAND;
+    const demand_met = coverage * DEMAND;
+
+    // Allocate proportionally by capacity
+    const alloc = {};
+    let allocTotal = 0;
+    idxs.forEach(i => {
+      alloc[i] = Math.round(demand_met * suppliers[i].cap / totalCap);
+      allocTotal += alloc[i];
+    });
+
+    let blendedCost = 0, blendedRel = 0, blendedLT = 0;
+    idxs.forEach(i => {
+      const w = alloc[i] / allocTotal;
+      blendedCost += suppliers[i].cost * w;
+      blendedRel  += suppliers[i].rel  * w;
+      blendedLT   += suppliers[i].lt   * w;
+    });
+
+    return { coverage, blendedCost, blendedRel, blendedLT, alloc, demand_met };
+  }
+
+  // ── OPTIMAL (pre-computed at load) ──
+  // Enumerate all 2^7 - 1 = 127 non-empty subsets; find best risk-adjusted mix
+  // that can cover 100% of demand. Score = blendedCost / blendedRel (lower = better).
+  const optSet = (function() {
+    let best = null, bestScore = Infinity;
+    const N = suppliers.length;
+    for (let mask = 1; mask < (1 << N); mask++) {
+      const idxs = [];
+      for (let b = 0; b < N; b++) if ((mask >> b) & 1) idxs.push(b);
+      const totalCap = idxs.reduce((s, i) => s + suppliers[i].cap, 0);
+      if (totalCap < DEMAND) continue; // must cover full demand
+      // Proportional blended cost/reliability
+      let bc = 0, br = 0;
+      idxs.forEach(i => {
+        const w = suppliers[i].cap / totalCap;
+        bc += suppliers[i].cost * w;
+        br += suppliers[i].rel  * w;
+      });
+      const score = bc / br;
+      if (score < bestScore) { bestScore = score; best = new Set(idxs); }
+    }
+    return best;
+  })();
+
+  // ── CHART ──
+  function buildChart(m) {
+    if (chartInst) { chartInst.destroy(); chartInst = null; }
+    const canvas = document.getElementById('allocChart');
+
+    if (!m || !activeSet.size) return;
+
+    // Sort selected by reliability descending
+    const idxs = [...activeSet].sort((a, b) => suppliers[b].rel - suppliers[a].rel);
+
+    chartInst = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: idxs.map(i => suppliers[i].name),
+        datasets: [{
+          label: 'Units allocated',
+          data:   idxs.map(i => m.alloc[i]),
+          backgroundColor: idxs.map(i => relColor(suppliers[i].rel, 0.72)),
+          borderColor:     idxs.map(i => relColor(suppliers[i].rel, 1)),
+          borderWidth: 1,
+          borderRadius: 2,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { top:10, right:16, bottom:6, left:4 } },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label(ctx) {
+                const i = idxs[ctx.dataIndex];
+                const s = suppliers[i];
+                const units = ctx.raw;
+                const spend = (units * s.cost / 1000).toFixed(1);
+                return [
+                  ` ${units.toLocaleString()} units`,
+                  ` $${spend}K spend`,
+                  ` ${(s.rel * 100).toFixed(1)}% reliable`,
+                  ` ${s.lt}wk lead time`,
+                ];
+              }
+            },
+            backgroundColor: 'rgba(14,14,14,0.95)',
+            borderColor:     'rgba(255,255,255,0.1)',
+            borderWidth: 1,
+            titleColor:  '#e8e4dc',
+            bodyColor:   '#8a8480',
+            titleFont: { family:'DM Mono,monospace', size:11 },
+            bodyFont:  { family:'DM Mono,monospace', size:10 },
+          }
+        },
+        scales: {
+          x: {
+            max: DEMAND,
+            ticks: {
+              color: '#6a6460',
+              font:  { family:'DM Mono,monospace', size:9 },
+              callback: v => v >= 1000 ? (v / 1000) + 'K' : v,
+            },
+            grid: { color:'rgba(255,255,255,0.05)' },
+            title: {
+              display: true,
+              text:    'units allocated',
+              color:   '#5a5650',
+              font:    { family:'DM Mono,monospace', size:9 },
+            }
+          },
+          y: {
+            ticks: { color:'#8a8480', font:{ family:'DM Mono,monospace', size:10 } },
+            grid:  { display: false },
+          }
+        }
+      }
+    });
+  }
+
+  // ── UPDATE ──
+  function update() {
+    const n = activeSet.size;
+    document.getElementById('sel-count').textContent  = n;
+    document.getElementById('sel-plural').textContent = n === 1 ? '' : 's';
+
+    const m = calcMetrics();
+
+    if (!m) {
+      ['m-cost','m-spend','m-rel','m-cov'].forEach(id =>
+        document.getElementById(id).textContent = '—'
+      );
+      document.getElementById('m-rel-box').className = 'wm';
+      document.getElementById('m-cov-box').className = 'wm';
+    } else {
+      document.getElementById('m-cost').textContent  = '$' + m.blendedCost.toFixed(2);
+      document.getElementById('m-spend').textContent = '$' + (m.blendedCost * DEMAND / 1000).toFixed(0) + 'K';
+      document.getElementById('m-rel').textContent   = (m.blendedRel * 100).toFixed(1) + '%';
+      document.getElementById('m-cov').textContent   = (m.coverage * 100).toFixed(0) + '%';
+      document.getElementById('m-rel-box').className = m.blendedRel < 0.85 ? 'wm warn' : 'wm';
+      document.getElementById('m-cov-box').className = m.coverage  < 1.00  ? 'wm warn' : 'wm';
+    }
+
+    drawScatter();
+    buildChart(m);
+  }
+
+  // ── BUTTON ──
+  document.getElementById('btn-opt').addEventListener('click', function() {
+    if (optSet) {
+      activeSet = new Set(optSet);
+      document.getElementById('rev3').style.display = 'block';
+      update();
+    }
+  });
+
+  update();
+})();
+</script>
+</body>
+</html>
