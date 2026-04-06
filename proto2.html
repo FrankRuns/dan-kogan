@@ -31,7 +31,6 @@ nav{
 .nav-links a:hover{color:var(--text);}
 .nav-links a.active{color:var(--accent);}
 
-/* TWO-COLUMN LAYOUT */
 .main{
   position:fixed;
   top:var(--nav-h);left:0;right:0;bottom:0;
@@ -39,7 +38,7 @@ nav{
   grid-template-columns:56% 44%;
 }
 
-/* LEFT COLUMN */
+/* LEFT */
 .col-left{
   display:flex;flex-direction:column;
   padding:1rem 1rem 1rem 1.25rem;
@@ -51,11 +50,12 @@ nav{
 .ex-question{font-family:'DM Serif Display',Georgia,serif;font-size:1.1rem;color:var(--text);line-height:1.2;}
 .ex-goal{font-size:11px;color:var(--muted);letter-spacing:0.03em;margin-bottom:0.6rem;flex-shrink:0;}
 
-.slider-row{display:flex;align-items:center;gap:10px;margin-bottom:0.6rem;flex-shrink:0;}
-.slider-row label{font-size:11px;color:var(--muted);white-space:nowrap;letter-spacing:0.03em;}
-input[type=range]{flex:1;-webkit-appearance:none;height:2px;background:var(--border);border-radius:2px;outline:none;}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;}
-.slider-val{font-size:14px;color:var(--accent);min-width:16px;text-align:right;}
+.active-count{
+  display:flex;align-items:center;gap:0.5rem;
+  font-size:11px;color:var(--muted);letter-spacing:0.03em;
+  margin-bottom:0.5rem;flex-shrink:0;
+}
+.active-count em{color:var(--accent);font-style:normal;font-size:13px;}
 
 canvas#map2{
   flex:1;min-height:0;
@@ -64,7 +64,7 @@ canvas#map2{
   background:var(--bg);
 }
 
-/* RIGHT COLUMN */
+/* RIGHT */
 .col-right{
   display:flex;flex-direction:column;
   padding:1rem 1.25rem 1rem 1rem;
@@ -76,7 +76,8 @@ canvas#map2{
   display:grid;grid-template-columns:1fr 1fr;gap:6px;
   margin-bottom:0.65rem;flex-shrink:0;
 }
-.wm{background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:7px 10px;}
+.wm{background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:7px 10px;transition:border-color 0.2s;}
+.wm.highlight{border-color:var(--accent);}
 .wm-label{font-size:9px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:3px;}
 .wm-value{font-size:16px;font-weight:500;color:var(--text);}
 
@@ -108,7 +109,7 @@ canvas#map2{
   background:rgba(126,200,164,0.06);border-left:2px solid var(--accent2);
   padding:0.7rem 0.9rem;line-height:1.65;
   display:none;border-radius:0 3px 3px 0;
-  flex-shrink:0;overflow-y:auto;max-height:100px;
+  flex-shrink:0;overflow-y:auto;max-height:90px;
 }
 
 .takeaway{
@@ -147,12 +148,8 @@ canvas#map2{
       <div class="ex-num">02</div>
       <div class="ex-question">How many warehouses do you need?</div>
     </div>
-    <div class="ex-goal">// slide to add warehouses — find the minimum total cost</div>
-    <div class="slider-row">
-      <label>// warehouses:</label>
-      <input type="range" id="wh-slider" min="1" max="8" value="1" step="1">
-      <span class="slider-val" id="wh-val">1</span>
-    </div>
+    <div class="ex-goal">// click warehouses (▪) to toggle them on or off</div>
+    <div class="active-count">// active: <em id="active-count">1</em> warehouse<span id="plural"></span></div>
     <canvas id="map2"></canvas>
   </div>
 
@@ -161,7 +158,7 @@ canvas#map2{
     <div class="metrics-grid">
       <div class="wm"><div class="wm-label">Fixed cost</div><div class="wm-value" id="fc2">—</div></div>
       <div class="wm"><div class="wm-label">Transport cost</div><div class="wm-value" id="vc2">—</div></div>
-      <div class="wm"><div class="wm-label">Total cost</div><div class="wm-value" id="tc2">—</div></div>
+      <div class="wm" id="tc-box"><div class="wm-label">Total cost</div><div class="wm-value" id="tc2">—</div></div>
       <div class="wm"><div class="wm-label">Avg distance</div><div class="wm-value" id="ad2">—</div></div>
     </div>
 
@@ -173,7 +170,8 @@ canvas#map2{
       <div class="wl-item"><div class="wl-dot" style="background:#5a9fd4;"></div>customer</div>
       <div class="wl-item"><div class="wl-sq" style="background:#c9a96e;"></div>active warehouse</div>
       <div class="wl-item"><div class="wl-sq" style="background:#2a2a2a;border:1px solid #333;"></div>inactive</div>
-      <div class="wl-item"><div class="wl-dot" style="background:#7ec8a4;"></div>optimal (chart)</div>
+      <div class="wl-item"><div class="wl-dot" style="background:#7ec8a4;border-radius:50%;"></div>optimal (chart)</div>
+      <div class="wl-item"><div class="wl-dot" style="background:#e8e4dc;border-radius:50%;"></div>your selection</div>
     </div>
 
     <button class="widget-btn" id="btn-sweet">find the sweet spot</button>
@@ -191,112 +189,321 @@ canvas#map2{
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 (function(){
-  const candidates=[
+  // ── DATA ──
+  const candidates = [
     {x:0.12,y:0.28},{x:0.20,y:0.70},{x:0.38,y:0.18},{x:0.42,y:0.72},
     {x:0.55,y:0.42},{x:0.68,y:0.20},{x:0.75,y:0.68},{x:0.88,y:0.38},
   ];
-  const custs=[
+  const custs = [
     {x:0.08,y:0.22},{x:0.15,y:0.55},{x:0.18,y:0.78},{x:0.28,y:0.35},
     {x:0.32,y:0.72},{x:0.40,y:0.52},{x:0.47,y:0.20},{x:0.50,y:0.82},
     {x:0.58,y:0.60},{x:0.62,y:0.28},{x:0.68,y:0.75},{x:0.72,y:0.45},
     {x:0.78,y:0.18},{x:0.82,y:0.65},{x:0.88,y:0.36},{x:0.92,y:0.56},
     {x:0.25,y:0.12},{x:0.60,y:0.10},
   ];
-  const FIXED=75000,RATE=0.13,SCALE=2200;
+  const FIXED = 75000, RATE = 0.13, SCALE = 2200;
 
-  function nearest(cx,cy,active){
-    let best=Infinity,bw=null;
-    active.forEach(w=>{const dx=(cx-w.x)*SCALE,dy=(cy-w.y)*SCALE*0.6,d=Math.sqrt(dx*dx+dy*dy);if(d<best){best=d;bw=w;}});
-    return{wh:bw,dist:best};
-  }
-  function calcCosts(n){
-    const active=candidates.slice(0,n);
-    let tv=0,td=0;
-    custs.forEach(c=>{const{dist}=nearest(c.x,c.y,active);tv+=dist*RATE*500;td+=dist;});
-    return{fixed:n*FIXED,variable:Math.round(tv),total:Math.round(n*FIXED+tv),avgDist:Math.round(td/custs.length)};
-  }
-  const allC=[];for(let i=1;i<=8;i++)allC.push(calcCosts(i));
-  const optN=allC.reduce((bi,c,i)=>c.total<allC[bi].total?i:bi,0)+1;
-
-  const map2=document.getElementById('map2');
-  const ctx2=map2.getContext('2d');
-
-  function drawMap2(n){
-    const W=map2.clientWidth,H=map2.clientHeight;
-    if(W===0||H===0) return;
-    map2.width=W;map2.height=H;ctx2.clearRect(0,0,W,H);
-    const active=candidates.slice(0,n);
-    custs.forEach(c=>{
-      const{wh}=nearest(c.x,c.y,active);if(!wh)return;
-      ctx2.beginPath();ctx2.moveTo(c.x*W,c.y*H);ctx2.lineTo(wh.x*W,wh.y*H);
-      ctx2.strokeStyle='rgba(90,159,212,0.12)';ctx2.lineWidth=1;ctx2.stroke();
+  function nearest(cx, cy, active) {
+    let best = Infinity, bw = null;
+    active.forEach(w => {
+      const dx = (cx - w.x) * SCALE, dy = (cy - w.y) * SCALE * 0.6;
+      const d = Math.sqrt(dx*dx + dy*dy);
+      if (d < best) { best = d; bw = w; }
     });
-    candidates.forEach((w,i)=>{
-      const on=i<n,s=8;
-      ctx2.fillStyle=on?'#c9a96e':'rgba(42,42,42,0.8)';
-      ctx2.strokeStyle=on?'#c9a96e':'#333';ctx2.lineWidth=1;
-      ctx2.beginPath();ctx2.rect(w.x*W-s,w.y*H-s,s*2,s*2);ctx2.fill();ctx2.stroke();
-      if(on){ctx2.font='10px DM Mono,monospace';ctx2.fillStyle='#c9a96e';ctx2.textAlign='center';ctx2.fillText('WH'+(i+1),w.x*W,w.y*H-s-3);}
-    });
-    custs.forEach(c=>{
-      ctx2.beginPath();ctx2.arc(c.x*W,c.y*H,4,0,Math.PI*2);
-      ctx2.fillStyle='rgba(90,159,212,0.7)';ctx2.fill();
-    });
+    return { wh: bw, dist: best };
   }
 
-  let chartInst=null;
-  function buildChart(n){
-    const labels=allC.map((_,i)=>(i+1)+'');
-    const fxd=allC.map(c=>Math.round(c.fixed/1000));
-    const vrb=allC.map(c=>Math.round(c.variable/1000));
-    const tot=allC.map(c=>Math.round(c.total/1000));
-    if(chartInst)chartInst.destroy();
-    chartInst=new Chart(document.getElementById('costChart'),{
-      type:'bar',
-      data:{labels,datasets:[
-        {label:'Fixed ($K)',data:fxd,backgroundColor:'rgba(201,169,110,0.55)',stack:'s'},
-        {label:'Transport ($K)',data:vrb,backgroundColor:'rgba(90,159,212,0.45)',stack:'s'},
-        {label:'Total ($K)',data:tot,type:'line',borderColor:'#e8e4dc',backgroundColor:'transparent',
-         borderWidth:1.5,pointRadius:tot.map((_,i)=>(i+1)===optN?6:3),
-         pointBackgroundColor:tot.map((_,i)=>(i+1)===optN?'#7ec8a4':'#e8e4dc'),
-         tension:0.3,stack:undefined}
-      ]},
-      options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'$'+c.parsed.y+'K'}}},
-        scales:{
-          x:{stacked:true,ticks:{color:'#8a8480',font:{size:10,family:'DM Mono'}},
-             grid:{color:'rgba(255,255,255,0.04)'},
-             title:{display:true,text:'warehouses',color:'#8a8480',font:{size:9,family:'DM Mono'}}},
-          y:{stacked:false,ticks:{callback:v=>'$'+v+'K',color:'#8a8480',font:{size:10,family:'DM Mono'}},
-             grid:{color:'rgba(255,255,255,0.05)'}}
+  function calcCosts(active) {
+    if (!active.length) return { fixed:0, variable:0, total:0, avgDist:0 };
+    let tv = 0, td = 0;
+    custs.forEach(c => {
+      const { dist } = nearest(c.x, c.y, active);
+      tv += dist * RATE * 500;
+      td += dist;
+    });
+    return {
+      fixed: active.length * FIXED,
+      variable: Math.round(tv),
+      total: Math.round(active.length * FIXED + tv),
+      avgDist: Math.round(td / custs.length)
+    };
+  }
+
+  // Pre-compute reference curve (sequential l→r ordering, same as before)
+  const refCurve = [];
+  for (let i = 1; i <= 8; i++) refCurve.push(calcCosts(candidates.slice(0, i)));
+  const optN = refCurve.reduce((bi, c, i) => c.total < refCurve[bi].total ? i : bi, 0) + 1;
+
+  // ── STATE ──
+  let activeSet = new Set([0]);   // WH1 on by default
+  let hoveredIdx = -1;
+
+  // ── MAP ──
+  const map2 = document.getElementById('map2');
+  const ctx2 = map2.getContext('2d');
+  const HIT = 10; // hit-test radius beyond square edge
+
+  function sqSize(W, H) { return Math.max(6, Math.min(W, H) * 0.028); }
+
+  function hitTest(px, py, W, H) {
+    const s = sqSize(W, H);
+    for (let i = 0; i < candidates.length; i++) {
+      const wx = candidates[i].x * W, wy = candidates[i].y * H;
+      if (px >= wx-s-HIT && px <= wx+s+HIT && py >= wy-s-HIT && py <= wy+s+HIT) return i;
+    }
+    return -1;
+  }
+
+  function drawMap2() {
+    const W = map2.clientWidth, H = map2.clientHeight;
+    if (!W || !H) return;
+    map2.width = W; map2.height = H;
+    ctx2.clearRect(0, 0, W, H);
+
+    const activeArr = candidates.filter((_, i) => activeSet.has(i));
+    const s = sqSize(W, H);
+
+    // Connection lines
+    custs.forEach(c => {
+      const { wh } = nearest(c.x, c.y, activeArr);
+      if (!wh) return;
+      ctx2.beginPath();
+      ctx2.moveTo(c.x*W, c.y*H);
+      ctx2.lineTo(wh.x*W, wh.y*H);
+      ctx2.strokeStyle = 'rgba(90,159,212,0.12)';
+      ctx2.lineWidth = 1;
+      ctx2.stroke();
+    });
+
+    // Warehouses
+    candidates.forEach((w, i) => {
+      const on = activeSet.has(i);
+      const hovered = i === hoveredIdx;
+      const ss = hovered ? s * 1.3 : s;
+      const wx = w.x*W, wy = w.y*H;
+
+      // glow on hover
+      if (hovered) {
+        ctx2.shadowColor = on ? 'rgba(201,169,110,0.5)' : 'rgba(255,255,255,0.2)';
+        ctx2.shadowBlur = 10;
+      }
+      ctx2.fillStyle   = on ? 'rgba(201,169,110,0.25)' : 'rgba(42,42,42,0.6)';
+      ctx2.strokeStyle = on ? '#c9a96e' : (hovered ? 'rgba(255,255,255,0.4)' : '#333');
+      ctx2.lineWidth   = on ? 1.5 : 1;
+      ctx2.beginPath();
+      ctx2.rect(wx - ss, wy - ss, ss*2, ss*2);
+      ctx2.fill(); ctx2.stroke();
+      ctx2.shadowBlur = 0;
+
+      if (on) {
+        ctx2.font = `${Math.max(8, s)}px DM Mono,monospace`;
+        ctx2.fillStyle = '#c9a96e';
+        ctx2.textAlign = 'center';
+        ctx2.fillText('WH'+(i+1), wx, wy - ss - 3);
+      } else {
+        // show number faintly for inactive
+        ctx2.font = `${Math.max(7, s*0.9)}px DM Mono,monospace`;
+        ctx2.fillStyle = 'rgba(255,255,255,0.18)';
+        ctx2.textAlign = 'center';
+        ctx2.fillText(''+(i+1), wx, wy + s*0.38);
+      }
+    });
+
+    // Customers
+    custs.forEach(c => {
+      ctx2.beginPath();
+      ctx2.arc(c.x*W, c.y*H, Math.max(3, s*0.5), 0, Math.PI*2);
+      ctx2.fillStyle = 'rgba(90,159,212,0.7)';
+      ctx2.fill();
+    });
+  }
+
+  map2.addEventListener('click', function(e) {
+    const rect = map2.getBoundingClientRect();
+    const scaleX = map2.width  / rect.width;
+    const scaleY = map2.height / rect.height;
+    const px = (e.clientX - rect.left) * scaleX;
+    const py = (e.clientY - rect.top)  * scaleY;
+    const idx = hitTest(px, py, map2.width, map2.height);
+    if (idx < 0) return;
+    if (activeSet.has(idx)) activeSet.delete(idx);
+    else                     activeSet.add(idx);
+    update();
+  });
+
+  map2.addEventListener('mousemove', function(e) {
+    const rect = map2.getBoundingClientRect();
+    const scaleX = map2.width  / rect.width;
+    const scaleY = map2.height / rect.height;
+    const px = (e.clientX - rect.left) * scaleX;
+    const py = (e.clientY - rect.top)  * scaleY;
+    const idx = hitTest(px, py, map2.width, map2.height);
+    if (idx !== hoveredIdx) {
+      hoveredIdx = idx;
+      map2.style.cursor = idx >= 0 ? 'pointer' : 'default';
+      drawMap2();
+    }
+  });
+
+  map2.addEventListener('mouseleave', function() {
+    hoveredIdx = -1;
+    map2.style.cursor = 'default';
+    drawMap2();
+  });
+
+  // ── CHART ──
+  let chartInst = null;
+
+  function buildChart() {
+    const n   = activeSet.size;
+    const cur = calcCosts(candidates.filter((_, i) => activeSet.has(i)));
+
+    const labels    = refCurve.map((_, i) => String(i+1));
+    const fixedData = refCurve.map(c => Math.round(c.fixed   / 1000));
+    const varData   = refCurve.map(c => Math.round(c.variable / 1000));
+    const totData   = refCurve.map(c => Math.round(c.total   / 1000));
+
+    // Highlight the column matching current count
+    const fixedBg = refCurve.map((_, i) =>
+      (i+1) === n ? 'rgba(201,169,110,0.72)' : 'rgba(201,169,110,0.18)'
+    );
+    const varBg = refCurve.map((_, i) =>
+      (i+1) === n ? 'rgba(90,159,212,0.60)' : 'rgba(90,159,212,0.14)'
+    );
+
+    // "You are here" point — null everywhere except current N
+    const yourDot = n > 0
+      ? refCurve.map((_, i) => (i+1) === n ? Math.round(cur.total / 1000) : null)
+      : refCurve.map(() => null);
+
+    if (chartInst) chartInst.destroy();
+
+    chartInst = new Chart(document.getElementById('costChart'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Fixed ($K)',
+            data: fixedData,
+            backgroundColor: fixedBg,
+            stack: 's'
+          },
+          {
+            label: 'Transport ($K)',
+            data: varData,
+            backgroundColor: varBg,
+            stack: 's'
+          },
+          {
+            // reference total line
+            label: 'Total (ref)',
+            data: totData,
+            type: 'line',
+            borderColor: 'rgba(232,228,220,0.2)',
+            backgroundColor: 'transparent',
+            borderWidth: 1.2,
+            pointRadius: totData.map((_, i) => (i+1) === optN ? 5 : 2),
+            pointBackgroundColor: totData.map((_, i) =>
+              (i+1) === optN ? '#7ec8a4' : 'rgba(232,228,220,0.3)'
+            ),
+            tension: 0.3,
+            stack: undefined
+          },
+          {
+            // "Your selection" — live dot
+            label: 'Your selection',
+            data: yourDot,
+            type: 'line',
+            showLine: false,
+            pointRadius: yourDot.map(v => v !== null ? 7 : 0),
+            pointBackgroundColor: '#e8e4dc',
+            pointBorderColor: '#0e0e0e',
+            pointBorderWidth: 1.5,
+            stack: undefined
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 220 },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: c => {
+                if (c.dataset.label === 'Your selection' && c.parsed.y !== null) {
+                  return 'Your selection: $' + c.parsed.y + 'K';
+                }
+                return c.dataset.label + ': $' + c.parsed.y + 'K';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            stacked: true,
+            ticks: { color: '#8a8480', font: { size: 10, family: 'DM Mono' } },
+            grid: { color: 'rgba(255,255,255,0.04)' },
+            title: {
+              display: true, text: 'warehouses',
+              color: '#8a8480', font: { size: 9, family: 'DM Mono' }
+            }
+          },
+          y: {
+            stacked: false,
+            ticks: { callback: v => '$' + v + 'K', color: '#8a8480', font: { size: 10, family: 'DM Mono' } },
+            grid: { color: 'rgba(255,255,255,0.05)' }
+          }
         }
       }
     });
   }
 
-  function update2(n){
-    const c=allC[n-1];
-    document.getElementById('wh-val').textContent=n;
-    document.getElementById('fc2').textContent='$'+Math.round(c.fixed/1000)+'K';
-    document.getElementById('vc2').textContent='$'+Math.round(c.variable/1000)+'K';
-    document.getElementById('tc2').textContent='$'+Math.round(c.total/1000)+'K';
-    document.getElementById('ad2').textContent=c.avgDist+' mi';
-    drawMap2(n);buildChart(n);
+  // ── UPDATE ──
+  function update() {
+    const n   = activeSet.size;
+    const cur = calcCosts(candidates.filter((_, i) => activeSet.has(i)));
+
+    document.getElementById('active-count').textContent = n;
+    document.getElementById('plural').textContent = n === 1 ? '' : 's';
+
+    if (n === 0) {
+      document.getElementById('fc2').textContent = '—';
+      document.getElementById('vc2').textContent = '—';
+      document.getElementById('tc2').textContent = '—';
+      document.getElementById('ad2').textContent = '—';
+    } else {
+      document.getElementById('fc2').textContent = '$' + Math.round(cur.fixed   / 1000) + 'K';
+      document.getElementById('vc2').textContent = '$' + Math.round(cur.variable / 1000) + 'K';
+      document.getElementById('tc2').textContent = '$' + Math.round(cur.total   / 1000) + 'K';
+      document.getElementById('ad2').textContent = cur.avgDist + ' mi';
+    }
+
+    // Pulse the total-cost box when cost changes
+    const tcBox = document.getElementById('tc-box');
+    tcBox.classList.remove('highlight');
+    void tcBox.offsetWidth; // force reflow
+    if (n > 0) tcBox.classList.add('highlight');
+
+    drawMap2();
+    buildChart();
   }
 
-  document.getElementById('wh-slider').addEventListener('input',function(){update2(parseInt(this.value));});
-  document.getElementById('btn-sweet').addEventListener('click',()=>{
-    document.getElementById('wh-slider').value=optN;
-    update2(optN);
-    document.getElementById('rev2').style.display='block';
+  // ── SWEET SPOT ──
+  document.getElementById('btn-sweet').addEventListener('click', () => {
+    // Activate the canonical optimal N warehouses
+    activeSet.clear();
+    for (let i = 0; i < optN; i++) activeSet.add(i);
+    update();
+    document.getElementById('rev2').style.display = 'block';
   });
 
-  new ResizeObserver(()=>{
-    const n=parseInt(document.getElementById('wh-slider').value);
-    drawMap2(n);
-  }).observe(map2);
+  // ── RESIZE ──
+  new ResizeObserver(() => drawMap2()).observe(map2);
 
-  update2(1);
+  update();
 })();
 </script>
 </body>
