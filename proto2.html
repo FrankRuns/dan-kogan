@@ -358,10 +358,16 @@ canvas#map2{
     const n   = activeSet.size;
     const cur = calcCosts(candidates.filter((_, i) => activeSet.has(i)));
 
-    const labels    = refCurve.map((_, i) => String(i+1));
-    const fixedData = refCurve.map(c => Math.round(c.fixed   / 1000));
-    const varData   = refCurve.map(c => Math.round(c.variable / 1000));
-    const totData   = refCurve.map(c => Math.round(c.total   / 1000));
+    const labels = refCurve.map((_, i) => String(i+1));
+
+    // Bars: use ACTUAL selection costs for the active column, reference for all others
+    const fixedData = refCurve.map((c, i) =>
+      Math.round(((i+1) === n ? cur.fixed    : c.fixed)    / 1000));
+    const varData   = refCurve.map((c, i) =>
+      Math.round(((i+1) === n ? cur.variable : c.variable) / 1000));
+
+    // Reference total line stays on the sequential reference curve throughout
+    const totData = refCurve.map(c => Math.round(c.total / 1000));
 
     // Highlight the column matching current count
     const fixedBg = refCurve.map((_, i) =>
