@@ -256,6 +256,7 @@ canvas#map2{
   // ── STATE ──
   let activeSet = new Set([0]);   // WH1 on by default
   let hoveredIdx = -1;
+  let hoveredCust = -1;
 
   // ── MAP ──
   const map2 = document.getElementById('map2');
@@ -263,6 +264,15 @@ canvas#map2{
   const HIT = 10; // hit-test radius beyond square edge
 
   function sqSize(W, H) { return Math.max(6, Math.min(W, H) * 0.028); }
+
+  function custHitTest(px, py, W, H) {
+    const r = Math.max(3, sqSize(W, H) * 0.5) + 6; // dot radius + padding
+    for (let i = 0; i < custs.length; i++) {
+      const cx = custs[i].x * W, cy = custs[i].y * H;
+      if (Math.hypot(px - cx, py - cy) <= r) return i;
+    }
+    return -1;
+  }
 
   function hitTest(px, py, W, H) {
     const s = sqSize(W, H);
@@ -329,12 +339,38 @@ canvas#map2{
     });
 
     // Customers
-    custs.forEach(c => {
+    custs.forEach((c, i) => {
+      const hov = i === hoveredCust;
       ctx2.beginPath();
       ctx2.arc(c.x*W, c.y*H, Math.max(3, s*0.5), 0, Math.PI*2);
-      ctx2.fillStyle = 'rgba(90,159,212,0.7)';
+      ctx2.fillStyle = hov ? 'rgba(126,200,164,0.95)' : 'rgba(90,159,212,0.7)';
       ctx2.fill();
     });
+
+    // Customer tooltip
+    if (hoveredCust >= 0) {
+      const c  = custs[hoveredCust];
+      const cx = c.x * W, cy = c.y * H;
+      const label = 'C' + (hoveredCust + 1);
+      const pad = 5, fs = 11;
+      ctx2.font = `500 ${fs}px DM Mono,monospace`;
+      const tw = ctx2.measureText(label).width;
+      const bw = tw + pad * 2, bh = fs + pad * 2;
+      let bx = cx + 8, by = cy - bh - 4;
+      if (bx + bw > W) bx = cx - bw - 8;
+      if (by < 0) by = cy + 4;
+      ctx2.fillStyle = 'rgba(14,14,14,0.92)';
+      ctx2.strokeStyle = 'rgba(126,200,164,0.6)';
+      ctx2.lineWidth = 1;
+      ctx2.beginPath();
+      ctx2.roundRect(bx, by, bw, bh, 3);
+      ctx2.fill(); ctx2.stroke();
+      ctx2.fillStyle = '#7ec8a4';
+      ctx2.textAlign = 'left';
+      ctx2.textBaseline = 'top';
+      ctx2.fillText(label, bx + pad, by + pad);
+      ctx2.textBaseline = 'alphabetic';
+    }
   }
 
   map2.addEventListener('click', function(e) {
@@ -356,16 +392,19 @@ canvas#map2{
     const scaleY = map2.height / rect.height;
     const px = (e.clientX - rect.left) * scaleX;
     const py = (e.clientY - rect.top)  * scaleY;
-    const idx = hitTest(px, py, map2.width, map2.height);
-    if (idx !== hoveredIdx) {
-      hoveredIdx = idx;
-      map2.style.cursor = idx >= 0 ? 'pointer' : 'default';
+    const idx  = hitTest(px, py, map2.width, map2.height);
+    const cidx = idx < 0 ? custHitTest(px, py, map2.width, map2.height) : -1;
+    if (idx !== hoveredIdx || cidx !== hoveredCust) {
+      hoveredIdx  = idx;
+      hoveredCust = cidx;
+      map2.style.cursor = (idx >= 0 || cidx >= 0) ? 'pointer' : 'default';
       drawMap2();
     }
   });
 
   map2.addEventListener('mouseleave', function() {
-    hoveredIdx = -1;
+    hoveredIdx  = -1;
+    hoveredCust = -1;
     map2.style.cursor = 'default';
     drawMap2();
   });
