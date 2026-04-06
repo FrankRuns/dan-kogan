@@ -5,92 +5,128 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Exercise 02 — How Many Warehouses Do You Need?</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0e0e0e;
-    --bg2: #161616;
-    --bg3: #1e1e1e;
-    --border: rgba(255,255,255,0.08);
-    --text: #e8e4dc;
-    --muted: #8a8480;
-    --accent: #c9a96e;
-    --accent2: #7ec8a4;
-    --danger: #d45f3c;
-    --blue: #5a9fd4;
-    --serif: 'DM Serif Display', Georgia, serif;
-    --mono: 'DM Mono', monospace;
-    --sans: 'Lato', sans-serif;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
-  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 17px; line-height: 1.75; }
+:root{
+  --bg:#0e0e0e;--bg2:#161616;--bg3:#1e1e1e;
+  --border:rgba(255,255,255,0.08);
+  --text:#e8e4dc;--muted:#8a8480;
+  --accent:#c9a96e;--accent2:#7ec8a4;
+  --mono:'DM Mono',monospace;
+  --nav-h:48px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--mono);}
 
-  /* NAV */
-  nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-    background: rgba(14,14,14,0.92); backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 2rem; height: 52px;
-  }
-  .nav-brand { font-family: var(--mono); font-size: 13px; color: var(--accent); letter-spacing: 0.04em; }
-  .nav-links { display: flex; gap: 2rem; list-style: none; }
-  .nav-links a { color: var(--muted); font-size: 13px; text-decoration: none; letter-spacing: 0.03em; transition: color 0.2s; font-family: var(--mono); }
-  .nav-links a:hover { color: var(--text); }
-  .nav-links a.active { color: var(--accent); }
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  background:rgba(14,14,14,0.95);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 1.5rem;height:var(--nav-h);
+}
+.nav-brand{font-size:12px;color:var(--accent);letter-spacing:0.04em;}
+.nav-links{display:flex;gap:1.5rem;list-style:none;}
+.nav-links a{color:var(--muted);font-size:11px;text-decoration:none;letter-spacing:0.03em;transition:color 0.2s;}
+.nav-links a:hover{color:var(--text);}
+.nav-links a.active{color:var(--accent);}
 
-  /* SECTIONS */
-  section { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 6rem 0 4rem; position: relative; overflow: hidden; }
-  .section-inner { max-width: 860px; margin: 0 auto; padding: 0 2rem; width: 100%; }
+/* TWO-COLUMN LAYOUT */
+.main{
+  position:fixed;
+  top:var(--nav-h);left:0;right:0;bottom:0;
+  display:grid;
+  grid-template-columns:56% 44%;
+}
 
-  /* SECTION LABELS */
-  .section-num { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 0.75rem; }
-  p { color: var(--muted); font-weight: 300; margin-bottom: 1.2rem; }
-  p strong { color: var(--text); font-weight: 700; }
+/* LEFT COLUMN */
+.col-left{
+  display:flex;flex-direction:column;
+  padding:1rem 1rem 1rem 1.25rem;
+  border-right:1px solid var(--border);
+  overflow:hidden;
+}
+.ex-header{display:flex;align-items:center;gap:1rem;margin-bottom:0.5rem;flex-shrink:0;}
+.ex-num{font-family:'DM Serif Display',Georgia,serif;font-size:2.2rem;color:var(--accent);opacity:0.35;line-height:1;}
+.ex-question{font-family:'DM Serif Display',Georgia,serif;font-size:1.1rem;color:var(--text);line-height:1.2;}
+.ex-goal{font-size:11px;color:var(--muted);letter-spacing:0.03em;margin-bottom:0.6rem;flex-shrink:0;}
 
-  /* EXERCISES */
-  .exercise-section { background: var(--bg); }
-  .exercise-header { background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; padding: 1.5rem; margin-bottom: 2rem; display: grid; grid-template-columns: auto 1fr; gap: 1.5rem; align-items: center; }
-  .ex-num-big { font-family: var(--serif); font-size: 3.5rem; color: var(--accent); line-height: 1; opacity: 0.4; }
-  .ex-question { font-family: var(--serif); font-size: 1.4rem; color: var(--text); margin-bottom: 0.4rem; }
-  .ex-goal { font-family: var(--mono); font-size: 12px; color: var(--muted); letter-spacing: 0.04em; }
-  .widget-frame { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 1.5rem; margin-bottom: 1.5rem; }
-  .takeaway { background: var(--bg3); border-left: 2px solid var(--accent2); padding: 1rem 1.25rem; border-radius: 0 4px 4px 0; margin-top: 1.5rem; font-size: 14px; color: var(--muted); line-height: 1.65; font-weight: 300; }
-  .takeaway strong { color: var(--accent2); }
+.slider-row{display:flex;align-items:center;gap:10px;margin-bottom:0.6rem;flex-shrink:0;}
+.slider-row label{font-size:11px;color:var(--muted);white-space:nowrap;letter-spacing:0.03em;}
+input[type=range]{flex:1;-webkit-appearance:none;height:2px;background:var(--border);border-radius:2px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;}
+.slider-val{font-size:14px;color:var(--accent);min-width:16px;text-align:right;}
 
-  /* CANVAS / WIDGET SHARED STYLES */
-  canvas { display: block; }
-  .widget-metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
-  .wm { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 10px 12px; }
-  .wm-label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.06em; margin-bottom: 4px; text-transform: uppercase; }
-  .wm-value { font-size: 18px; font-weight: 700; color: var(--text); font-family: var(--mono); }
-  .widget-legend { display: flex; gap: 1.25rem; flex-wrap: wrap; margin-top: 0.75rem; }
-  .wl-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); font-family: var(--mono); }
-  .wl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .wl-sq { width: 8px; height: 8px; flex-shrink: 0; }
-  .widget-btn { font-family: var(--mono); font-size: 12px; background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 6px 14px; border-radius: 3px; cursor: pointer; margin-top: 12px; transition: all 0.2s; letter-spacing: 0.04em; }
-  .widget-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .widget-reveal { font-size: 13px; color: var(--muted); background: rgba(126,200,164,0.08); border-left: 2px solid var(--accent2); padding: 10px 14px; margin-top: 12px; line-height: 1.65; display: none; border-radius: 0 3px 3px 0; font-weight: 300; }
+canvas#map2{
+  flex:1;min-height:0;
+  display:block;width:100%;
+  border:1px solid var(--border);border-radius:3px;
+  background:var(--bg);
+}
 
-  /* CONTROLS */
-  .slider-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-  .slider-row label { font-family: var(--mono); font-size: 12px; color: var(--muted); white-space: nowrap; letter-spacing: 0.03em; }
-  input[type=range] { flex: 1; -webkit-appearance: none; height: 2px; background: var(--border); border-radius: 2px; outline: none; }
-  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); cursor: pointer; }
-  .slider-val { font-family: var(--mono); font-size: 14px; color: var(--accent); min-width: 20px; text-align: right; }
-  .widget-metrics2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
+/* RIGHT COLUMN */
+.col-right{
+  display:flex;flex-direction:column;
+  padding:1rem 1.25rem 1rem 1rem;
+  background:var(--bg2);
+  overflow:hidden;
+}
 
-  /* NEXT PAGE NAV */
-  .page-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); }
-  .page-nav a { font-family: var(--mono); font-size: 13px; color: var(--accent); text-decoration: none; letter-spacing: 0.04em; transition: color 0.2s; }
-  .page-nav a:hover { color: var(--text); }
+.metrics-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:6px;
+  margin-bottom:0.65rem;flex-shrink:0;
+}
+.wm{background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:7px 10px;}
+.wm-label{font-size:9px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:3px;}
+.wm-value{font-size:16px;font-weight:500;color:var(--text);}
 
-  @media (max-width: 700px) {
-    .widget-metrics { grid-template-columns: 1fr 1fr; }
-    .widget-metrics2 { grid-template-columns: 1fr 1fr; }
-    nav .nav-links { display: none; }
-  }
+.chart-wrap{
+  flex:1;min-height:0;
+  position:relative;
+  border:1px solid var(--border);border-radius:3px;
+  background:var(--bg);
+  margin-bottom:0.65rem;
+}
+.chart-wrap canvas{position:absolute;inset:0;}
+
+.legend{display:flex;flex-wrap:wrap;gap:0.5rem 1rem;margin-bottom:0.65rem;flex-shrink:0;}
+.wl-item{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);}
+.wl-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.wl-sq{width:7px;height:7px;flex-shrink:0;}
+
+.widget-btn{
+  font-family:var(--mono);font-size:11px;
+  background:transparent;border:1px solid var(--border);
+  color:var(--muted);padding:7px 12px;border-radius:3px;
+  cursor:pointer;transition:all 0.2s;letter-spacing:0.04em;
+  flex-shrink:0;margin-bottom:0.65rem;
+}
+.widget-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+.reveal{
+  font-size:11.5px;color:var(--muted);
+  background:rgba(126,200,164,0.06);border-left:2px solid var(--accent2);
+  padding:0.7rem 0.9rem;line-height:1.65;
+  display:none;border-radius:0 3px 3px 0;
+  flex-shrink:0;overflow-y:auto;max-height:100px;
+}
+
+.takeaway{
+  margin-top:auto;
+  font-size:11px;color:var(--muted);line-height:1.6;
+  border-left:2px solid var(--accent2);padding:0.65rem 0.9rem;
+  background:rgba(126,200,164,0.05);border-radius:0 3px 3px 0;
+  flex-shrink:0;
+}
+.takeaway strong{color:var(--accent2);}
+
+.page-nav{
+  margin-top:0.65rem;padding-top:0.65rem;
+  border-top:1px solid var(--border);
+  display:flex;justify-content:space-between;flex-shrink:0;
+}
+.page-nav a{font-size:11px;color:var(--accent);text-decoration:none;letter-spacing:0.03em;transition:color 0.2s;}
+.page-nav a:hover{color:var(--text);}
 </style>
 </head>
 <body>
@@ -104,51 +140,53 @@
   </ul>
 </nav>
 
-<section id="ex2" class="exercise-section">
-  <div class="section-inner">
-    <div class="section-num">04 — Exercise 02</div>
-    <div class="exercise-header">
-      <div class="ex-num-big">02</div>
-      <div>
-        <div class="ex-question">How many warehouses do you need?</div>
-        <div class="ex-goal">// slide to add warehouses — find the minimum total cost</div>
-      </div>
+<div class="main">
+  <!-- LEFT: map -->
+  <div class="col-left">
+    <div class="ex-header">
+      <div class="ex-num">02</div>
+      <div class="ex-question">How many warehouses do you need?</div>
+    </div>
+    <div class="ex-goal">// slide to add warehouses — find the minimum total cost</div>
+    <div class="slider-row">
+      <label>// warehouses:</label>
+      <input type="range" id="wh-slider" min="1" max="8" value="1" step="1">
+      <span class="slider-val" id="wh-val">1</span>
+    </div>
+    <canvas id="map2"></canvas>
+  </div>
+
+  <!-- RIGHT: chart + controls -->
+  <div class="col-right">
+    <div class="metrics-grid">
+      <div class="wm"><div class="wm-label">Fixed cost</div><div class="wm-value" id="fc2">—</div></div>
+      <div class="wm"><div class="wm-label">Transport cost</div><div class="wm-value" id="vc2">—</div></div>
+      <div class="wm"><div class="wm-label">Total cost</div><div class="wm-value" id="tc2">—</div></div>
+      <div class="wm"><div class="wm-label">Avg distance</div><div class="wm-value" id="ad2">—</div></div>
     </div>
 
-    <div class="widget-frame">
-      <div class="slider-row">
-        <label>// warehouses:</label>
-        <input type="range" id="wh-slider" min="1" max="8" value="1" step="1">
-        <span class="slider-val" id="wh-val">1</span>
-      </div>
-      <div class="widget-metrics2">
-        <div class="wm"><div class="wm-label">Fixed cost</div><div class="wm-value" id="fc2">—</div></div>
-        <div class="wm"><div class="wm-label">Transport cost</div><div class="wm-value" id="vc2">—</div></div>
-        <div class="wm"><div class="wm-label">Total cost</div><div class="wm-value" id="tc2">—</div></div>
-        <div class="wm"><div class="wm-label">Avg distance</div><div class="wm-value" id="ad2">—</div></div>
-      </div>
-      <canvas id="map2" style="width:100%; border:1px solid var(--border); border-radius:3px; background:var(--bg);" height="280"></canvas>
-      <div style="position:relative; width:100%; height:180px; margin-top:12px;">
-        <canvas id="costChart"></canvas>
-      </div>
-      <div class="widget-legend" style="margin-top:8px;">
-        <div class="wl-item"><div class="wl-dot" style="background:#5a9fd4;"></div>customer</div>
-        <div class="wl-item"><div class="wl-sq" style="background:#c9a96e; width:8px; height:8px;"></div>active warehouse</div>
-        <div class="wl-item"><div class="wl-sq" style="background:#2a2a2a; border:1px solid #333; width:8px; height:8px;"></div>inactive candidate</div>
-        <div class="wl-item"><div class="wl-dot" style="background:#7ec8a4;"></div>optimal (green dot on chart)</div>
-      </div>
-      <button class="widget-btn" id="btn-sweet">find the sweet spot</button>
-      <div class="widget-reveal" id="rev2">The total cost curve forms a <strong>U-shape</strong>. More warehouses reduce transport cost (shorter distances) but add fixed cost. The minimum — usually 3–5 warehouses for this network — is the sweet spot. Push past it and you're paying for buildings faster than you're saving on miles. This U-shape is everywhere in supply chain: safety stock vs. stockouts, batch size vs. holding cost, service level vs. inventory. Recognizing the shape is half the job.</div>
+    <div class="chart-wrap">
+      <canvas id="costChart"></canvas>
     </div>
 
-    <div class="takeaway"><strong>Takeaway →</strong> "More is better" is almost never true in network design. Every tradeoff has a minimum. The job of analytics is to find it — and to explain why it's there to someone who didn't run the model.</div>
+    <div class="legend">
+      <div class="wl-item"><div class="wl-dot" style="background:#5a9fd4;"></div>customer</div>
+      <div class="wl-item"><div class="wl-sq" style="background:#c9a96e;"></div>active warehouse</div>
+      <div class="wl-item"><div class="wl-sq" style="background:#2a2a2a;border:1px solid #333;"></div>inactive</div>
+      <div class="wl-item"><div class="wl-dot" style="background:#7ec8a4;"></div>optimal (chart)</div>
+    </div>
+
+    <button class="widget-btn" id="btn-sweet">find the sweet spot</button>
+    <div class="reveal" id="rev2">The total cost curve is a <strong>U-shape</strong>. More warehouses reduce transport cost but add fixed cost. The minimum — usually 3–5 for this network — is the sweet spot. This shape appears everywhere in supply chain: safety stock vs. stockouts, batch size vs. holding cost.</div>
+
+    <div class="takeaway"><strong>Takeaway →</strong> "More is better" is almost never true in network design. Every tradeoff has a minimum. The job of analytics is to find it — and explain why.</div>
 
     <div class="page-nav">
       <a href="proto1.html">← exercise_01</a>
       <a href="index.html">back to intro →</a>
     </div>
   </div>
-</section>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
@@ -164,7 +202,7 @@
     {x:0.78,y:0.18},{x:0.82,y:0.65},{x:0.88,y:0.36},{x:0.92,y:0.56},
     {x:0.25,y:0.12},{x:0.60,y:0.10},
   ];
-  const FIXED=75000, RATE=0.13, SCALE=2200;
+  const FIXED=75000,RATE=0.13,SCALE=2200;
 
   function nearest(cx,cy,active){
     let best=Infinity,bw=null;
@@ -185,24 +223,20 @@
 
   function drawMap2(n){
     const W=map2.clientWidth,H=map2.clientHeight;
-    map2.width=W; map2.height=H; ctx2.clearRect(0,0,W,H);
+    if(W===0||H===0) return;
+    map2.width=W;map2.height=H;ctx2.clearRect(0,0,W,H);
     const active=candidates.slice(0,n);
     custs.forEach(c=>{
-      const{wh}=nearest(c.x,c.y,active);
-      if(!wh)return;
+      const{wh}=nearest(c.x,c.y,active);if(!wh)return;
       ctx2.beginPath();ctx2.moveTo(c.x*W,c.y*H);ctx2.lineTo(wh.x*W,wh.y*H);
       ctx2.strokeStyle='rgba(90,159,212,0.12)';ctx2.lineWidth=1;ctx2.stroke();
     });
     candidates.forEach((w,i)=>{
-      const on=i<n, s=9;
+      const on=i<n,s=8;
       ctx2.fillStyle=on?'#c9a96e':'rgba(42,42,42,0.8)';
-      ctx2.strokeStyle=on?'#c9a96e':'#333';
-      ctx2.lineWidth=1;
+      ctx2.strokeStyle=on?'#c9a96e':'#333';ctx2.lineWidth=1;
       ctx2.beginPath();ctx2.rect(w.x*W-s,w.y*H-s,s*2,s*2);ctx2.fill();ctx2.stroke();
-      if(on){
-        ctx2.font='10px DM Mono,monospace';ctx2.fillStyle='#c9a96e';
-        ctx2.textAlign='center';ctx2.fillText('WH'+(i+1),w.x*W,w.y*H-s-3);
-      }
+      if(on){ctx2.font='10px DM Mono,monospace';ctx2.fillStyle='#c9a96e';ctx2.textAlign='center';ctx2.fillText('WH'+(i+1),w.x*W,w.y*H-s-3);}
     });
     custs.forEach(c=>{
       ctx2.beginPath();ctx2.arc(c.x*W,c.y*H,4,0,Math.PI*2);
@@ -222,15 +256,17 @@
       data:{labels,datasets:[
         {label:'Fixed ($K)',data:fxd,backgroundColor:'rgba(201,169,110,0.55)',stack:'s'},
         {label:'Transport ($K)',data:vrb,backgroundColor:'rgba(90,159,212,0.45)',stack:'s'},
-        {label:'Total ($K)',data:tot,type:'line',borderColor:'#e8e4dc',backgroundColor:'transparent',borderWidth:1.5,
-         pointRadius:tot.map((_,i)=>(i+1)===optN?6:3),
-         pointBackgroundColor:tot.map((_,i)=>(i+1)===optN?'#7ec8a4':'#e8e4dc'),tension:0.3,stack:undefined}
+        {label:'Total ($K)',data:tot,type:'line',borderColor:'#e8e4dc',backgroundColor:'transparent',
+         borderWidth:1.5,pointRadius:tot.map((_,i)=>(i+1)===optN?6:3),
+         pointBackgroundColor:tot.map((_,i)=>(i+1)===optN?'#7ec8a4':'#e8e4dc'),
+         tension:0.3,stack:undefined}
       ]},
       options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'$'+ctx.parsed.y+'K'}}},
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'$'+c.parsed.y+'K'}}},
         scales:{
-          x:{stacked:true,ticks:{color:'#8a8480',font:{size:11,family:'DM Mono'}},grid:{color:'rgba(255,255,255,0.04)'},
-             title:{display:true,text:'warehouses',color:'#8a8480',font:{size:10,family:'DM Mono'}}},
+          x:{stacked:true,ticks:{color:'#8a8480',font:{size:10,family:'DM Mono'}},
+             grid:{color:'rgba(255,255,255,0.04)'},
+             title:{display:true,text:'warehouses',color:'#8a8480',font:{size:9,family:'DM Mono'}}},
           y:{stacked:false,ticks:{callback:v=>'$'+v+'K',color:'#8a8480',font:{size:10,family:'DM Mono'}},
              grid:{color:'rgba(255,255,255,0.05)'}}
         }
@@ -245,8 +281,7 @@
     document.getElementById('vc2').textContent='$'+Math.round(c.variable/1000)+'K';
     document.getElementById('tc2').textContent='$'+Math.round(c.total/1000)+'K';
     document.getElementById('ad2').textContent=c.avgDist+' mi';
-    drawMap2(n);
-    buildChart(n);
+    drawMap2(n);buildChart(n);
   }
 
   document.getElementById('wh-slider').addEventListener('input',function(){update2(parseInt(this.value));});
@@ -256,11 +291,12 @@
     document.getElementById('rev2').style.display='block';
   });
 
-  update2(1);
-  window.addEventListener('resize',()=>{
+  new ResizeObserver(()=>{
     const n=parseInt(document.getElementById('wh-slider').value);
     drawMap2(n);
-  });
+  }).observe(map2);
+
+  update2(1);
 })();
 </script>
 </body>
