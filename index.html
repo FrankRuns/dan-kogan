@@ -122,6 +122,9 @@ nav{
   background-size:52px 52px;
 }
 .lyric-inner{max-width:880px;position:relative;}
+.lyric-wordmark{display:flex;align-items:center;gap:10px;margin-bottom:1.1rem;}
+.lyric-wordmark img{width:32px;height:32px;display:block;filter:invert(1);}
+.lyric-wordmark-text{font-family:'Inter',sans-serif;font-size:1.45rem;font-weight:600;color:#ffffff;letter-spacing:-0.01em;line-height:1;}
 .lyric-label{font-family:'Inter',sans-serif;font-size:11px;color:#4a8fff;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:0.4rem;font-weight:500;}
 .lyric-title{font-family:'Inter',sans-serif;font-size:clamp(1.5rem,2.8vw,2.2rem);font-weight:300;color:#e2e8f2;line-height:1.2;margin-bottom:1.1rem;}
 .lyric-title strong{font-weight:600;color:#52d9c8;}
@@ -197,7 +200,7 @@ nav{
     <div class="ch-role">Bay Area, CA</div>
     <div class="ch-divider"></div>
     <div class="ch-heading">It starts here.</div>
-    <p class="ch-body">I was 26 years old, sort of floating. I didn't think I was good at anything, but some people thought I was. A friend recommended me for a job. Before the interview, that friend said to me, "when they ask you about comp, you have to ask for $100k. That seemed insane."</p>
+    <p class="ch-body">I was 26 years old, sort of floating. I didn't think I was good at anything, but some people thought I was. A friend recommended me for a job. Before the interview, that friend said to me, "when they ask you about comp, you have to ask for $100k." That seemed insane.</p>
     <p class="ch-body">So I practiced, and I rehearsed. And I asked for $90-100k... and then they offered me the job at $95k. I was surprised. And, hell, I showed up ready to work!</p>
     <div class="ch-insight"><strong>The habit:</strong> Don't underestimate yourself.</div>
   </div>
@@ -292,7 +295,11 @@ nav{
 <section class="slide slide-lyric">
   <div class="lyric-inner">
     <div class="lyric-label">07 — Current Work</div>
-    <h2 class="lyric-title">Lyric — <strong>AI-First</strong> Supply Chain Optimization</h2>
+    <div class="lyric-wordmark">
+      <img src="lyric-mark.png" alt="Lyric mark">
+      <span class="lyric-wordmark-text">Lyric</span>
+    </div>
+    <h2 class="lyric-title"><strong>AI-First</strong> Supply Chain Optimization</h2>
     <div class="lyric-divider"></div>
     <div class="lyric-grid">
       <div class="lyric-card">
