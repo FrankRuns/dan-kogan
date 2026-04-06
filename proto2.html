@@ -235,10 +235,28 @@ canvas#map2{
     };
   }
 
-  // Pre-compute reference curve (sequential l→r ordering, same as before)
-  const refCurve = [];
-  for (let i = 1; i <= 8; i++) refCurve.push(calcCosts(candidates.slice(0, i)));
-  const optN = refCurve.reduce((bi, c, i) => c.total < refCurve[bi].total ? i : bi, 0) + 1;
+  // Brute-force optimal curve: try every combination for each N, keep the best.
+  // C(8,1)+…+C(8,8) = 255 combos × 18 customers = ~4,600 ops — instant.
+  function combos(n, r) {
+    const out = [];
+    (function pick(start, cur) {
+      if (cur.length === r) { out.push([...cur]); return; }
+      for (let i = start; i < n; i++) { cur.push(i); pick(i+1, cur); cur.pop(); }
+    })(0, []);
+    return out;
+  }
+
+  const optCurve = [];   // [{fixed, variable, total, combo}, …] for n=1..8
+  for (let n = 1; n <= 8; n++) {
+    let best = { total: Infinity, combo: [] };
+    combos(8, n).forEach(combo => {
+      const c = calcCosts(combo.map(i => candidates[i]));
+      if (c.total < best.total) best = { ...c, combo };
+    });
+    optCurve.push(best);
+  }
+  const optN    = optCurve.reduce((bi, c, i) => c.total < optCurve[bi].total ? i : bi, 0) + 1;
+  const optCombo = optCurve[optN - 1].combo;   // indices of best overall set
 
   // ── STATE ──
   let activeSet = new Set([0]);   // WH1 on by default
@@ -364,13 +382,13 @@ canvas#map2{
     const n   = activeSet.size;
     const cur = calcCosts(candidates.filter((_, i) => activeSet.has(i)));
 
-    const labels   = refCurve.map((_, i) => String(i+1));
-    const refFixed = refCurve.map(c => Math.round(c.fixed    / 1000));
-    const refVar   = refCurve.map(c => Math.round(c.variable / 1000));
-    const refTot   = refCurve.map(c => Math.round(c.total    / 1000));
+    const labels   = optCurve.map((_, i) => String(i+1));
+    const refFixed = optCurve.map(c => Math.round(c.fixed    / 1000));
+    const refVar   = optCurve.map(c => Math.round(c.variable / 1000));
+    const refTot   = optCurve.map(c => Math.round(c.total    / 1000));
 
     // Dots for user's actual costs — only appear at current N
-    const dot = (val) => refCurve.map((_, i) => (n > 0 && (i+1) === n) ? val : null);
+    const dot = (val) => optCurve.map((_, i) => (n > 0 && (i+1) === n) ? val : null);
     const dotR = (i) => (n > 0 && (i+1) === n) ? 7 : 0;
 
     if (chartInst) chartInst.destroy();
@@ -406,7 +424,7 @@ canvas#map2{
             data: refTot,
             borderColor: 'rgba(232,228,220,0.35)',
             borderWidth: 2,
-            pointRadius: refTot.map((_, i) => (i+1) === optN ? 6 : 0),
+            pointRadius: optCurve.map((_, i) => (i+1) === optN ? 6 : 0),
             pointBackgroundColor: '#7ec8a4',
             tension: 0.3,
             backgroundColor: 'transparent',
@@ -416,7 +434,7 @@ canvas#map2{
             label: 'Your fixed',
             data: dot(n > 0 ? Math.round(cur.fixed    / 1000) : null),
             showLine: false,
-            pointRadius: refCurve.map((_, i) => dotR(i)),
+            pointRadius: optCurve.map((_, i) => dotR(i)),
             pointBackgroundColor: '#c9a96e',
             pointBorderColor: '#0e0e0e',
             pointBorderWidth: 1.5,
@@ -427,7 +445,7 @@ canvas#map2{
             label: 'Your transport',
             data: dot(n > 0 ? Math.round(cur.variable / 1000) : null),
             showLine: false,
-            pointRadius: refCurve.map((_, i) => dotR(i)),
+            pointRadius: optCurve.map((_, i) => dotR(i)),
             pointBackgroundColor: '#5a9fd4',
             pointBorderColor: '#0e0e0e',
             pointBorderWidth: 1.5,
@@ -438,7 +456,7 @@ canvas#map2{
             label: 'Your total',
             data: dot(n > 0 ? Math.round(cur.total    / 1000) : null),
             showLine: false,
-            pointRadius: refCurve.map((_, i) => (n > 0 && (i+1) === n) ? 9 : 0),
+            pointRadius: optCurve.map((_, i) => (n > 0 && (i+1) === n) ? 9 : 0),
             pointBackgroundColor: '#e8e4dc',
             pointBorderColor: '#0e0e0e',
             pointBorderWidth: 2,
@@ -514,9 +532,9 @@ canvas#map2{
 
   // ── SWEET SPOT ──
   document.getElementById('btn-sweet').addEventListener('click', () => {
-    // Activate the canonical optimal N warehouses
+    // Activate the true optimal combination
     activeSet.clear();
-    for (let i = 0; i < optN; i++) activeSet.add(i);
+    optCombo.forEach(i => activeSet.add(i));
     update();
     document.getElementById('rev2').style.display = 'block';
   });
