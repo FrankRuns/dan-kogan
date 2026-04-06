@@ -177,7 +177,7 @@ canvas#map2{
       <div class="wl-item">
         <svg width="18" height="8" style="flex-shrink:0"><line x1="0" y1="4" x2="18" y2="4" stroke="rgba(232,228,220,0.35)" stroke-width="2"/></svg>total</div>
       <div class="wl-item"><div class="wl-dot" style="background:#7ec8a4;"></div>sweet spot</div>
-      <div class="wl-item"><div class="wl-dot" style="background:#e8e4dc;"></div>your total</div>
+      <div class="wl-item"><div class="wl-dot" style="background:#e8e4dc;border:1.5px solid #555;"></div>your total</div>
     </div>
 
     <button class="widget-btn" id="btn-sweet">find the sweet spot</button>
@@ -387,9 +387,8 @@ canvas#map2{
     const refVar   = optCurve.map(c => Math.round(c.variable / 1000));
     const refTot   = optCurve.map(c => Math.round(c.total    / 1000));
 
-    // Dots for user's actual costs — only appear at current N
+    // Dot for user's total cost — only appears at current N
     const dot = (val) => optCurve.map((_, i) => (n > 0 && (i+1) === n) ? val : null);
-    const dotR = (i) => (n > 0 && (i+1) === n) ? 7 : 0;
 
     if (chartInst) chartInst.destroy();
 
@@ -429,29 +428,7 @@ canvas#map2{
             tension: 0.3,
             backgroundColor: 'transparent',
           },
-          // ── Your selection dots (solid, full-size) ──
-          {
-            label: 'Your fixed',
-            data: dot(n > 0 ? Math.round(cur.fixed    / 1000) : null),
-            showLine: false,
-            pointRadius: optCurve.map((_, i) => dotR(i)),
-            pointBackgroundColor: '#c9a96e',
-            pointBorderColor: '#0e0e0e',
-            pointBorderWidth: 1.5,
-            borderColor: 'transparent',
-            backgroundColor: 'transparent',
-          },
-          {
-            label: 'Your transport',
-            data: dot(n > 0 ? Math.round(cur.variable / 1000) : null),
-            showLine: false,
-            pointRadius: optCurve.map((_, i) => dotR(i)),
-            pointBackgroundColor: '#5a9fd4',
-            pointBorderColor: '#0e0e0e',
-            pointBorderWidth: 1.5,
-            borderColor: 'transparent',
-            backgroundColor: 'transparent',
-          },
+          // ── Your selection dot (total cost only) ──
           {
             label: 'Your total',
             data: dot(n > 0 ? Math.round(cur.total    / 1000) : null),
