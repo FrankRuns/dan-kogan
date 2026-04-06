@@ -171,13 +171,8 @@ canvas#map2{
       <div class="wl-item"><div class="wl-sq" style="background:#c9a96e;border-radius:2px;"></div>active WH</div>
       <div class="wl-item"><div class="wl-sq" style="background:#2a2a2a;border:1px solid #444;border-radius:2px;"></div>inactive</div>
       <div class="wl-item" style="margin-left:0.5rem;border-left:1px solid rgba(255,255,255,0.08);padding-left:0.75rem;">
-        <svg width="18" height="8" style="flex-shrink:0"><line x1="0" y1="4" x2="18" y2="4" stroke="rgba(201,169,110,0.5)" stroke-width="1.5" stroke-dasharray="3,3"/></svg>fixed</div>
-      <div class="wl-item">
-        <svg width="18" height="8" style="flex-shrink:0"><line x1="0" y1="4" x2="18" y2="4" stroke="rgba(90,159,212,0.5)" stroke-width="1.5" stroke-dasharray="3,3"/></svg>transport</div>
-      <div class="wl-item">
-        <svg width="18" height="8" style="flex-shrink:0"><line x1="0" y1="4" x2="18" y2="4" stroke="rgba(232,228,220,0.35)" stroke-width="2"/></svg>total</div>
-      <div class="wl-item"><div class="wl-dot" style="background:#7ec8a4;"></div>sweet spot</div>
-      <div class="wl-item"><div class="wl-dot" style="background:#e8e4dc;border:1.5px solid #555;"></div>your total</div>
+        <div class="wl-sq" style="background:#c9a96e;border-radius:2px;"></div>poorly served</div>
+      <div class="wl-item"><div class="wl-sq" style="background:#5a9fd4;border-radius:2px;"></div>well served</div>
     </div>
 
     <button class="widget-btn" id="btn-sweet">find the sweet spot</button>
@@ -379,98 +374,76 @@ canvas#map2{
   let chartInst = null;
 
   function buildChart() {
-    const n   = activeSet.size;
-    const cur = calcCosts(candidates.filter((_, i) => activeSet.has(i)));
+    const activeArr = candidates.filter((_, i) => activeSet.has(i));
 
-    const labels   = optCurve.map((_, i) => String(i+1));
-    const refFixed = optCurve.map(c => Math.round(c.fixed    / 1000));
-    const refVar   = optCurve.map(c => Math.round(c.variable / 1000));
-    const refTot   = optCurve.map(c => Math.round(c.total    / 1000));
+    // Per-customer transport cost, sorted worst → best
+    const custData = custs.map((c, i) => {
+      if (!activeArr.length) return { label: 'C'+(i+1), cost: 0 };
+      const { dist } = nearest(c.x, c.y, activeArr);
+      return { label: 'C'+(i+1), cost: Math.round(dist * RATE * 500) };
+    });
+    custData.sort((a, b) => b.cost - a.cost);
 
-    // Dot for user's total cost — only appears at current N
-    const dot = (val) => optCurve.map((_, i) => (n > 0 && (i+1) === n) ? val : null);
+    const maxCost = custData[0]?.cost || 1;
+
+    // Color each bar: gold (poorly served) → blue (well served)
+    const colors = custData.map(d => {
+      if (!activeArr.length) return 'rgba(80,80,80,0.4)';
+      const t = maxCost > 0 ? d.cost / maxCost : 0;
+      const r = Math.round(90  + t * (201 - 90));
+      const g = Math.round(159 + t * (169 - 159));
+      const b = Math.round(212 + t * (110 - 212));
+      return `rgba(${r},${g},${b},0.78)`;
+    });
 
     if (chartInst) chartInst.destroy();
 
     chartInst = new Chart(document.getElementById('costChart'), {
-      type: 'line',
+      type: 'bar',
       data: {
-        labels,
-        datasets: [
-          // ── Reference curves (thin, muted) ──
-          {
-            label: 'Fixed cost',
-            data: refFixed,
-            borderColor: 'rgba(201,169,110,0.45)',
-            borderWidth: 1.5,
-            pointRadius: 0,
-            tension: 0,
-            backgroundColor: 'transparent',
-            borderDash: [3, 3],
-          },
-          {
-            label: 'Transport cost',
-            data: refVar,
-            borderColor: 'rgba(90,159,212,0.45)',
-            borderWidth: 1.5,
-            pointRadius: 0,
-            tension: 0.35,
-            backgroundColor: 'transparent',
-            borderDash: [3, 3],
-          },
-          {
-            label: 'Total cost',
-            data: refTot,
-            borderColor: 'rgba(232,228,220,0.35)',
-            borderWidth: 2,
-            pointRadius: optCurve.map((_, i) => (i+1) === optN ? 6 : 0),
-            pointBackgroundColor: '#7ec8a4',
-            tension: 0.3,
-            backgroundColor: 'transparent',
-          },
-          // ── Your selection dot (total cost only) ──
-          {
-            label: 'Your total',
-            data: dot(n > 0 ? Math.round(cur.total    / 1000) : null),
-            showLine: false,
-            pointRadius: optCurve.map((_, i) => (n > 0 && (i+1) === n) ? 9 : 0),
-            pointBackgroundColor: '#e8e4dc',
-            pointBorderColor: '#0e0e0e',
-            pointBorderWidth: 2,
-            borderColor: 'transparent',
-            backgroundColor: 'transparent',
-          },
-        ]
+        labels: custData.map(d => d.label),
+        datasets: [{
+          label: 'Transport cost',
+          data: custData.map(d => d.cost),
+          backgroundColor: colors,
+          borderWidth: 0,
+          borderRadius: 2,
+        }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: { duration: 200 },
+        animation: { duration: 180 },
         plugins: {
           legend: { display: false },
           tooltip: {
-            filter: item => item.parsed.y !== null,
             callbacks: {
-              label: c => {
-                if (c.parsed.y === null) return null;
-                return c.dataset.label + ': $' + c.parsed.y + 'K';
-              }
+              label: c => '$' + c.parsed.y.toLocaleString() + ' transport'
             }
           }
         },
         scales: {
           x: {
-            ticks: { color: '#8a8480', font: { size: 10, family: 'DM Mono' } },
-            grid: { color: 'rgba(255,255,255,0.04)' },
+            ticks: { color: '#8a8480', font: { size: 9, family: 'DM Mono' } },
+            grid: { display: false },
             title: {
-              display: true, text: 'warehouses active',
+              display: true,
+              text: 'customers  (worst served → best served)',
               color: '#8a8480', font: { size: 9, family: 'DM Mono' }
             }
           },
           y: {
-            ticks: { callback: v => '$' + v + 'K', color: '#8a8480', font: { size: 10, family: 'DM Mono' } },
+            ticks: {
+              callback: v => '$' + (v / 1000).toFixed(0) + 'K',
+              color: '#8a8480', font: { size: 10, family: 'DM Mono' }
+            },
             grid: { color: 'rgba(255,255,255,0.05)' },
             beginAtZero: true,
+            title: {
+              display: true,
+              text: 'transport cost',
+              color: '#8a8480', font: { size: 9, family: 'DM Mono' }
+            }
           }
         }
       }
